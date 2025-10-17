@@ -121,18 +121,15 @@ def savedat(arr, nsteps, Ts, runtime, ratio, energy, order, nmax):
     filename = "LL-Output-{:s}.txt".format(current_datetime)
     FileOut = open(filename, "w")
     # Write a header with run parameters
-    print("#=====================================================", file=FileOut)
     print("# File created:        {:s}".format(current_datetime), file=FileOut)
     print("# Size of lattice:     {:d}x{:d}".format(nmax, nmax), file=FileOut)
     print("# Number of MC steps:  {:d}".format(nsteps), file=FileOut)
     print("# Reduced temperature: {:5.3f}".format(Ts), file=FileOut)
     print("# Run time (s):        {:8.6f}".format(runtime), file=FileOut)
-    print("#=====================================================", file=FileOut)
-    print("# MC step:  Ratio:     Energy:   Order:", file=FileOut)
-    print("#=====================================================", file=FileOut)
+    print("MC step,Ratio,Energy,Order", file=FileOut)
     # Write the columns of data
     for i in range(nsteps+1):
-        print("   {:05d}    {:6.4f} {:12.4f}  {:6.4f} ".format(
+        print("{:05d},{:6.4f},{:12.4f},{:6.4f}".format(
             i, ratio[i], energy[i], order[i]), file=FileOut)
     FileOut.close()
 # =======================================================================
