@@ -288,9 +288,9 @@ def main(program, nsteps, nmax, temp, pflag):
     # Plot initial frame of lattice
     plotdat(lattice, pflag, nmax)
     # Create arrays to store energy, acceptance ratio and order parameter
-    energy = np.zeros(nsteps+1, dtype=np.double)
-    ratio = np.zeros(nsteps+1, dtype=np.double)
-    order = np.zeros(nsteps+1, dtype=np.double)
+    energy = np.zeros(nsteps+1, dtype=np.float64)
+    ratio = np.zeros(nsteps+1, dtype=np.float64)
+    order = np.zeros(nsteps+1, dtype=np.float64)
     # Set initial values in arrays
     energy[0] = all_energy(lattice, nmax)
     ratio[0] = 0.5  # ideal value
