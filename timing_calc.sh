@@ -6,7 +6,7 @@
 rm ./data/timing_data/LL*
 
 for i in $(seq 1 3);do
-  python ./LebwohlLasher.py 1000 20 0.9 0
+  python $1 1000 20 0.9 0
 done
 
 mv ./LL* ./data/timing_data/ 
