@@ -192,6 +192,7 @@ def all_energy(arr, nmax):
 # =======================================================================
 
 
+@nb.njit
 def get_order(arr, nmax):
     """
     Arguments:

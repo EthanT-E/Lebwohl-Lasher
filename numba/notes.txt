@@ -1,0 +1,7 @@
+Notes on timings of different numba approaches
+
+njit one_energy() : 3.280734
+
+njit para all_energy() + njit one_energy() : 5.175300
+
+njit one_energy() + njit get_order() : 
