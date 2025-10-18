@@ -193,7 +193,7 @@ def all_energy(arr, nmax):
 
 
 @nb.njit
-def get_order(arr, nmax):
+def get_order(arr: float, nmax: int) -> float:
     """
     Arguments:
           arr (float(nmax,nmax)) = array that contains lattice data;
@@ -224,7 +224,7 @@ def get_order(arr, nmax):
 # =======================================================================
 
 
-def MC_step(arr, Ts, nmax):
+def MC_step(arr: float, Ts: float, nmax: int) -> float:
     """
     Arguments:
           arr (float(nmax,nmax)) = array that contains lattice data;
