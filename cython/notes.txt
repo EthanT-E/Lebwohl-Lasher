@@ -1,5 +1,10 @@
 notes on the timings of the cython code
+size = 20, T = 0.65
 
-Basic one_energy only time:4.419944
+Base time = 8.350183
 
-Basoc one_energy and all_energy:4.357507666666667
+Basic one_energy only time:4.419944 speed-up: 1.8892
+
+Basic one_energy and all_energy:4.357508 speed-up: 1.9163
+
+basic one_energy, all_energy, get_order: 3.230133 speed-up: 2.5851
