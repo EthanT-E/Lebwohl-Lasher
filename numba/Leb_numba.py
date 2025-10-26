@@ -137,7 +137,7 @@ def savedat(arr, nsteps, Ts, runtime, ratio, energy, order, nmax):
 
 
 @nb.njit
-def one_energy(arr: float, ix: int, iy: int, nmax: int) -> float:
+def one_energy(arr: np.ndarray, ix: int, iy: int, nmax: int) -> float:
     """
     Arguments:
           arr (float(nmax,nmax)) = array that contains lattice data;
@@ -173,7 +173,7 @@ def one_energy(arr: float, ix: int, iy: int, nmax: int) -> float:
 # =======================================================================
 
 
-def all_energy(arr, nmax):
+def all_energy(arr: np.ndarray, nmax: int) -> float:
     """
     Arguments:
           arr (float(nmax,nmax)) = array that contains lattice data;
@@ -193,7 +193,7 @@ def all_energy(arr, nmax):
 
 
 @nb.njit
-def get_order(arr: float, nmax: int) -> float:
+def get_order(arr: np.ndarray, nmax: int) -> float:
     """
     Arguments:
           arr (float(nmax,nmax)) = array that contains lattice data;
@@ -224,7 +224,7 @@ def get_order(arr: float, nmax: int) -> float:
 # =======================================================================
 
 
-def MC_step(arr: float, Ts: float, nmax: int) -> float:
+def MC_step(arr: np.ndarray, Ts: float, nmax: int) -> float:
     """
     Arguments:
           arr (float(nmax,nmax)) = array that contains lattice data;

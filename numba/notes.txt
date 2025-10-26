@@ -1,9 +1,12 @@
 Notes on timings of different numba approaches
+size = 20 temp = 0.65
 
-njit one_energy() : 3.280734
+Base time = 8.350183
 
-njit para all_energy() + njit one_energy() : 5.175300
+njit one_energy() : 3.280734 speed-up: 2.5452
 
-njit one_energy() + njit get_order() : 1.47242
+njit para all_energy() + njit one_energy() : 5.175300 speed-up: 1.6135
+
+njit one_energy() + njit get_order() : 1.47242 speed-up: 5.6711
 
 jit MC_step() : N/A Doesn't work due to the large inlcusion of the np methods
