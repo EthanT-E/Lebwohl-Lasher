@@ -1,0 +1,5 @@
+notes on the timings of the cython code
+
+Basic one_energy only time:4.419944
+
+Basoc one_energy and all_energy:4.357507666666667
