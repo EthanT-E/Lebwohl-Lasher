@@ -77,9 +77,11 @@ def plotdat(arr, pflag, nmax):
     cols = np.zeros((nmax, nmax))
     if pflag == 1:  # colour the arrows according to energy
         mpl.rc('image', cmap='rainbow')
+        temp_ene = 0
         for i in range(nmax):
             for j in range(nmax):
-                cols[i, j] = one_energy(arr, i, j, nmax)
+                one_energy(arr, i, j, nmax, temp_ene)
+                cols[i, j] = temp_ene
         norm = plt.Normalize(cols.min(), cols.max())
     elif pflag == 2:  # colour the arrows according to angle
         mpl.rc('image', cmap='hsv')
@@ -137,7 +139,8 @@ def savedat(arr, nsteps, Ts, runtime, ratio, energy, order, nmax):
 
 
 @nb.njit
-def one_energy(arr: np.ndarray, ix: int, iy: int, nmax: int) -> float:
+# @nb.guvectorize([(nb.float64[:, :], nb.int64, nb.int64, nb.int64, nb.int64)], '(n,n),(),(),(),() ->()')
+def one_energy(arr: float, ix: int, iy: int, nmax: int, output: float):
     """
     Arguments:
           arr (float(nmax,nmax)) = array that contains lattice data;
@@ -152,24 +155,40 @@ def one_energy(arr: np.ndarray, ix: int, iy: int, nmax: int) -> float:
         Returns:
           en (float) = reduced energy of cell.
     """
-    en = 0.0
-    ixp = (ix+1) % nmax  # These are the coordinates
-    ixm = (ix-1) % nmax  # of the neighbours
-    iyp = (iy+1) % nmax  # with wraparound
-    iym = (iy-1) % nmax
+    en: float = 0.0
+    ixp: int = (ix+1) % nmax  # These are the coordinates
+    ixm: int = (ix-1) % nmax  # of the neighbours
+    iyp: int = (iy+1) % nmax  # with wraparound
+    iym: int = (iy-1) % nmax
 #
 # Add together the 4 neighbour contributions
 # to the energy
 #
-    ang = arr[ix, iy]-arr[ixp, iy]
-    en += 0.5*(1.0 - 3.0*np.cos(ang)**2)
+#     ang: float = arr[ix, iy]-arr[ixp, iy]
+#     en += 0.5*(1.0 - 3.0*np.cos(ang)**2)
+#     ang = arr[ix, iy]-arr[ixm, iy]
+#     en += 0.5*(1.0 - 3.0*np.cos(ang)**2)
+#     ang = arr[ix, iy]-arr[ix, iyp]
+#     en += 0.5*(1.0 - 3.0*np.cos(ang)**2)
+#     ang = arr[ix, iy]-arr[ix, iym]
+#     en += 0.5*(1.0 - 3.0*np.cos(ang)**2)
+#     output = en
+    ang: float = arr[ix, iy]-arr[ixp, iy]
+    one_energy_vectorized(ang, en)
     ang = arr[ix, iy]-arr[ixm, iy]
-    en += 0.5*(1.0 - 3.0*np.cos(ang)**2)
+    one_energy_vectorized(ang, en)
     ang = arr[ix, iy]-arr[ix, iyp]
-    en += 0.5*(1.0 - 3.0*np.cos(ang)**2)
+    one_energy_vectorized(ang, en)
     ang = arr[ix, iy]-arr[ix, iym]
-    en += 0.5*(1.0 - 3.0*np.cos(ang)**2)
-    return en
+    one_energy_vectorized(ang, en)
+    output = en
+
+# =======================================================================
+
+
+@nb.guvectorize('void(float64,float64)', '()->()')
+def one_energy_vectorized(ang: float, energy: float):
+    energy += 0.5*(1.0 - 3.0*np.cos(ang)**2)
 # =======================================================================
 
 
@@ -185,9 +204,11 @@ def all_energy(arr: np.ndarray, nmax: int) -> float:
           enall (float) = reduced energy of lattice.
     """
     enall = 0.0
+    temp_en = 0.0
     for i in range(nmax):
         for j in range(nmax):
-            enall += one_energy(arr, i, j, nmax)
+            one_energy(arr, i, j, nmax, temp_en)
+            enall += temp_en
     return enall
 # =======================================================================
 
@@ -250,14 +271,16 @@ def MC_step(arr: np.ndarray, Ts: float, nmax: int) -> float:
     xran = np.random.randint(0, high=nmax, size=(nmax, nmax))
     yran = np.random.randint(0, high=nmax, size=(nmax, nmax))
     aran = np.random.normal(scale=scale, size=(nmax, nmax))
+    en0 = 0
+    en1 = 0
     for i in range(nmax):
         for j in range(nmax):
             ix = xran[i, j]
             iy = yran[i, j]
             ang = aran[i, j]
-            en0 = one_energy(arr, ix, iy, nmax)
+            one_energy(arr, ix, iy, nmax, en0)
             arr[ix, iy] += ang
-            en1 = one_energy(arr, ix, iy, nmax)
+            one_energy(arr, ix, iy, nmax, en1)
             if en1 <= en0:
                 accept += 1
             else:
