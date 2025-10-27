@@ -138,9 +138,13 @@ def savedat(arr, nsteps, Ts, runtime, ratio, energy, order, nmax):
 # =======================================================================
 
 
+@nb.vectorize([nb.float64(nb.float64)])
+def ang_calc(ang: float) -> float:
+    return 0.5*(1.0 - 3.0*np.cos(ang)**2)
+
+
 @nb.njit
-# @nb.guvectorize([(nb.float64[:, :], nb.int64, nb.int64, nb.int64, nb.int64)], '(n,n),(),(),(),() ->()')
-def one_energy(arr: float, ix: int, iy: int, nmax: int):
+def one_energy(arr: np.ndarray, ix: int, iy: int, nmax: int):
     """
     Arguments:
           arr (float(nmax,nmax)) = array that contains lattice data;
@@ -163,36 +167,24 @@ def one_energy(arr: float, ix: int, iy: int, nmax: int):
 #
 # Add together the 4 neighbour contributions
 # to the energy
-#
-#     ang: float = arr[ix, iy]-arr[ixp, iy]
-#     en += 0.5*(1.0 - 3.0*np.cos(ang)**2)
-#     ang = arr[ix, iy]-arr[ixm, iy]
-#     en += 0.5*(1.0 - 3.0*np.cos(ang)**2)
-#     ang = arr[ix, iy]-arr[ix, iyp]
-#     en += 0.5*(1.0 - 3.0*np.cos(ang)**2)
-#     ang = arr[ix, iy]-arr[ix, iym]
-#     en += 0.5*(1.0 - 3.0*np.cos(ang)**2)
-#     output = en
+
     ang: float = arr[ix, iy]-arr[ixp, iy]
-    en += one_energy_vectorized(ang)
+    en += ang_calc(ang)
     ang = arr[ix, iy]-arr[ixm, iy]
-    en += one_energy_vectorized(ang)
+    en += ang_calc(ang)
     ang = arr[ix, iy]-arr[ix, iyp]
-    en += one_energy_vectorized(ang)
+    en += ang_calc(ang)
     ang = arr[ix, iy]-arr[ix, iym]
-    en += one_energy_vectorized(ang)
+    en += ang_calc(ang)
     return en
 
+
+# =======================================================================
+
 # =======================================================================
 
 
-@nb.vectorize('float64(float64)')
-def one_energy_vectorized(ang: float) -> float:
-    energy = 0.5*(1.0 - 3.0*cos(ang)**2)
-    return energy
-# =======================================================================
-
-
+@nb.njit
 def all_energy(arr: np.ndarray, nmax: int) -> float:
     """
     Arguments:
@@ -209,6 +201,13 @@ def all_energy(arr: np.ndarray, nmax: int) -> float:
         for j in range(nmax):
             enall += one_energy(arr, i, j, nmax)
     return enall
+
+
+# @nb.guvectorize('void(float64[:,:],float64[:,:],int64)', '(n,n),(n,n),() -> (n,n)', nopython=False)
+# def vect_all_energy(input: np.ndarray, output: np.ndarray, size: int):
+#     for crystal in range(size):
+#         output[crystal] = all_energy(input[crystal], size)
+
 # =======================================================================
 
 
