@@ -26,10 +26,10 @@ import sys
 import time
 import datetime
 import numpy as np
+from numpy import cos
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 import numba as nb
-from math import cos
 
 # =======================================================================
 
@@ -81,8 +81,7 @@ def plotdat(arr, pflag, nmax):
         temp_ene = 0
         for i in range(nmax):
             for j in range(nmax):
-                one_energy(arr, i, j, nmax, temp_ene)
-                cols[i, j] = temp_ene
+                cols[i, j] = one_energy(arr, i, j, nmax)
         norm = plt.Normalize(cols.min(), cols.max())
     elif pflag == 2:  # colour the arrows according to angle
         mpl.rc('image', cmap='hsv')
@@ -141,7 +140,7 @@ def savedat(arr, nsteps, Ts, runtime, ratio, energy, order, nmax):
 
 @nb.njit
 # @nb.guvectorize([(nb.float64[:, :], nb.int64, nb.int64, nb.int64, nb.int64)], '(n,n),(),(),(),() ->()')
-def one_energy(arr: float, ix: int, iy: int, nmax: int, output: float):
+def one_energy(arr: float, ix: int, iy: int, nmax: int):
     """
     Arguments:
           arr (float(nmax,nmax)) = array that contains lattice data;
@@ -182,7 +181,7 @@ def one_energy(arr: float, ix: int, iy: int, nmax: int, output: float):
     en += one_energy_vectorized(ang)
     ang = arr[ix, iy]-arr[ix, iym]
     en += one_energy_vectorized(ang)
-    output = en
+    return en
 
 # =======================================================================
 
@@ -206,11 +205,9 @@ def all_energy(arr: np.ndarray, nmax: int) -> float:
           enall (float) = reduced energy of lattice.
     """
     enall = 0.0
-    temp_en = 0.0
     for i in range(nmax):
         for j in range(nmax):
-            one_energy(arr, i, j, nmax, temp_en)
-            enall += temp_en
+            enall += one_energy(arr, i, j, nmax)
     return enall
 # =======================================================================
 
@@ -273,16 +270,14 @@ def MC_step(arr: np.ndarray, Ts: float, nmax: int) -> float:
     xran = np.random.randint(0, high=nmax, size=(nmax, nmax))
     yran = np.random.randint(0, high=nmax, size=(nmax, nmax))
     aran = np.random.normal(scale=scale, size=(nmax, nmax))
-    en0 = 0
-    en1 = 0
     for i in range(nmax):
         for j in range(nmax):
             ix = xran[i, j]
             iy = yran[i, j]
             ang = aran[i, j]
-            one_energy(arr, ix, iy, nmax, en0)
+            en0 = one_energy(arr, ix, iy, nmax)
             arr[ix, iy] += ang
-            one_energy(arr, ix, iy, nmax, en1)
+            en1 = one_energy(arr, ix, iy, nmax)
             if en1 <= en0:
                 accept += 1
             else:
