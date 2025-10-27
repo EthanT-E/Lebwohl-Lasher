@@ -173,7 +173,7 @@ def one_energy(arr: np.ndarray, ix: int, iy: int, nmax: int) -> float:
 # =======================================================================
 
 
-@nb.njit
+@nb.njit(parallel=True)
 def all_energy(arr: np.ndarray, nmax: int) -> float:
     """
     Arguments:
@@ -186,14 +186,14 @@ def all_energy(arr: np.ndarray, nmax: int) -> float:
           enall (float) = reduced energy of lattice.
     """
     enall = 0.0
-    for i in range(nmax):
+    for i in nb.prange(nmax):
         for j in range(nmax):
             enall += one_energy(arr, i, j, nmax)
     return enall
 # =======================================================================
 
 
-@nb.njit
+@nb.njit(parallel=True)
 def get_order(arr: np.ndarray, nmax: int) -> float:
     """
     Arguments:
@@ -216,7 +216,8 @@ def get_order(arr: np.ndarray, nmax: int) -> float:
                     ).reshape(3, nmax, nmax)
     for a in range(3):
         for b in range(3):
-            for i in range(nmax):
+            for i in nb.prange(nmax):
+                i = int(i)
                 for j in range(nmax):
                     Qab[a, b] += 3*lab[a, i, j]*lab[b, i, j] - delta[a, b]
     Qab = Qab/(2*nmax*nmax)
