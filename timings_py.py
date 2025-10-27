@@ -12,9 +12,9 @@ def main(Path_to_folder):
         data_file = open(path)
         lines = data_file.readlines()
         time_str = lines[4]
-        time = re.findall("[0-9]+\.[0-9]+", time_str)
+        time = re.findall("[0-9]+.[0-9]+", time_str)
         timings[i] = float(time[0])
-    print(np.mean(timings))
+    print(round(np.mean(timings), 6))
 
 
 if __name__ == "__main__":
