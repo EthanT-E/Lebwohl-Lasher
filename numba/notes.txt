@@ -2,11 +2,33 @@ Notes on timings of different numba approaches
 size = 20 temp = 0.65
 
 Base time = 8.350183
-
 njit one_energy() : 3.280734 speed-up: 2.5452
 
 njit para all_energy() + njit one_energy() : 5.175300 speed-up: 1.6135
 
-njit one_energy() + njit get_order() : 1.47242 speed-up: 5.6711
+njit one_energy() + njit get_order() : 1.402378 speed-up: 5.9543
 
 jit MC_step() : N/A Doesn't work due to the large inlcusion of the np methods
+
+njit one_energy() + njit get_order() + njit all_energy: 1.378703 speed-up: 6.0565
+
+njit + vectorize one_energy() + njit get_order() + njit all_energy: 1.348016 speed-up: 6.1944
+
+
+size = 50
+
+base time: 52.303596
+
+njit one_energy() + njit get_order() + njit all_energy: 8.686166 speed-up: 
+
+njit + vectorize one_energy() + njit get_order() + njit all_energy: 8.460022 speed-up: 
+
+Size = 100
+
+size = 100
+
+base time  = 237.220455
+
+njit one_energy() + njit get_order() + njit all_energy: 39.559367 speed-up: 5.9966
+
+njit + vectorize one_energy() + njit get_order() + njit all_energy: 36.101905 speed-up: 6.5710
