@@ -1,6 +1,6 @@
 import pytest
-from run_cython import MC_step, initdat
-from Leb_cython import all_energy, get_order, one_energy
+from run_cython import initdat
+from Leb_cython import MC_step, all_energy, get_order, one_energy
 import numpy as np
 
 
