@@ -143,7 +143,7 @@ def ang_calc(ang: float) -> float:
     return 0.5*(1.0 - 3.0*np.cos(ang)**2)
 
 
-@nb.njit
+@nb.njit()
 def one_energy(arr: np.ndarray, ix: int, iy: int, nmax: int):
     """
     Arguments:

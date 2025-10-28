@@ -173,6 +173,7 @@ def one_energy(arr: np.ndarray, ix: int, iy: int, nmax: int) -> float:
 # =======================================================================
 
 
+@nb.njit
 def all_energy(arr: np.ndarray, nmax: int) -> float:
     """
     Arguments:
@@ -192,7 +193,7 @@ def all_energy(arr: np.ndarray, nmax: int) -> float:
 # =======================================================================
 
 
-# @nb.njit(parallel=True)
+@nb.njit
 def get_order(arr: np.ndarray, nmax: int) -> float:
     """
     Arguments:
