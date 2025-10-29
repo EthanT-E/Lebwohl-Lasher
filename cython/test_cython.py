@@ -12,7 +12,7 @@ def test_initdata(size):
     arr2 = initdat(size)
     arr3 = initdat(size)
     not_equal = True
-    if (arr1 == arr2).all() and (arr2 == arr3).all():
+    if (arr1 == arr2) and (arr2 == arr3):
         not_equal = False
     assert not_equal == True, f"Init array is equal: {not_equal}"
 
