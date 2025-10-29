@@ -28,24 +28,24 @@ import datetime
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
-from Leb_cython import one_energy, get_order, all_energy, MC_step
+from Leb_cython import initdat, one_energy, all_energy, get_order, MC_step
 
 # =======================================================================
 
 
-def initdat(nmax):
-    """
-    Arguments:
-      nmax (int) = size of lattice to create (nmax,nmax).
-    Description:
-      Function to create and initialise the main data array that holds
-      the lattice.  Will return a square lattice (size nmax x nmax)
-          initialised with random orientations in the range [0,2pi].
-        Returns:
-          arr (float(nmax,nmax)) = array to hold lattice.
-    """
-    arr = np.random.random_sample((nmax, nmax))*2.0*np.pi
-    return arr
+# def initdat(nmax):
+#     """
+#     Arguments:
+#       nmax (int) = size of lattice to create (nmax,nmax).
+#     Description:
+#       Function to create and initialise the main data array that holds
+#       the lattice.  Will return a square lattice (size nmax x nmax)
+#           initialised with random orientations in the range [0,2pi].
+#         Returns:
+#           arr (float(nmax,nmax)) = array to hold lattice.
+#     """
+#     arr = np.random.random_sample((nmax, nmax))*2.0*np.pi
+#     return arr
 # =======================================================================
 
 
@@ -194,11 +194,10 @@ def savedat(arr, nsteps, Ts, runtime, ratio, energy, order, nmax):
     #       of 1 attempted change per lattice site.  Working with reduced
     #       temperature Ts = kT/epsilon.  Function returns the acceptance
     #       ratio for information.  This is the fraction of attempted changes
-    #       that are successful.  Generally aim to keep this around 0.5 for
-    #       efficient simulation.
-    #         Returns:
-    #           accept/(nmax**2) (float) = acceptance ratio for current MCS.
-    #     """
+    #     #       efficient simulation.
+    #     #         Returns:
+    #     #           accept/(nmax**2) (float) = acceptance ratio for current MCS.
+    #     #     """
     #     #
     #     # Pre-compute some random numbers.  This is faster than
     #     # using lots of individual calls.  "scale" sets the width
@@ -290,4 +289,5 @@ if __name__ == '__main__':
     else:
         print("Usage: python {} <ITERATIONS> <SIZE> <TEMPERATURE> <PLOTFLAG>".format(
             sys.argv[0]))
+# =======================================================================
 # =======================================================================

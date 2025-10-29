@@ -224,6 +224,8 @@ def get_order(arr: np.ndarray, nmax: int) -> float:
     return eigenvalues.max()
 # =======================================================================
 
+# @nb.njit
+
 
 def MC_step(arr: np.ndarray, Ts: float, nmax: int) -> float:
     """

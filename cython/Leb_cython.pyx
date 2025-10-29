@@ -3,6 +3,20 @@ from libc.math cimport cos, sin
 import numpy as np
 cimport numpy as cnp
 
+cpdef double[:,:] initdat(int nmax):
+    """
+    Arguments:
+      nmax (int) = size of lattice to create (nmax,nmax).
+    Description:
+      Function to create and initialise the main data array that holds
+      the lattice.  Will return a square lattice (size nmax x nmax)
+          initialised with random orientations in the range [0,2pi].
+        Returns:
+          arr (float(nmax,nmax)) = array to hold lattice.
+    """
+    cdef cnp.ndarray[dtype=cnp.float64_t,ndim=2] arr = np.random.random_sample((nmax, nmax))*2.0*np.pi
+    return arr
+
 cpdef double one_energy(double[:,:] arr, int ix, int iy,int nmax):
     cdef:
         double en = 0, ang
@@ -10,16 +24,17 @@ cpdef double one_energy(double[:,:] arr, int ix, int iy,int nmax):
         int ixm = (ix-1)%nmax
         int iyp = (iy+1)%nmax
         int iym = (iy-1)%nmax
-        cnp.ndarray[dtype] 
+        double cos_ang = 0
 
     ang = arr[ix,iy] - arr[ixp,iy]
-    en += 0.5*(1-3*(cos(ang)*cos(ang)))
+    cos_ang = cos(ang)
+    en += 0.5*(1-3*(cos_ang**2))
     ang = arr[ix,iy] - arr[ixm,iy]
-    en += 0.5*(1-3*(cos(ang)*cos(ang)))
+    en += 0.5*(1-3*(cos_ang**2))
     ang = arr[ix,iy] - arr[ix,iyp]
-    en += 0.5*(1-3*(cos(ang)*cos(ang)))
+    en += 0.5*(1-3*(cos_ang**2))
     ang = arr[ix,iy] - arr[ix,iym]
-    en += 0.5*(1-3*(cos(ang)*cos(ang)))
+    en += 0.5*(1-3*(cos_ang**2))
 
     return en
 
