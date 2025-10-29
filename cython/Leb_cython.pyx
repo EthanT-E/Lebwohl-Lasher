@@ -30,10 +30,13 @@ cpdef double one_energy(double[:,:] arr, int ix, int iy,int nmax):
     cos_ang = cos(ang)
     en += 0.5*(1-3*(cos_ang**2))
     ang = arr[ix,iy] - arr[ixm,iy]
+    cos_ang = cos(ang)
     en += 0.5*(1-3*(cos_ang**2))
     ang = arr[ix,iy] - arr[ix,iyp]
+    cos_ang = cos(ang)
     en += 0.5*(1-3*(cos_ang**2))
     ang = arr[ix,iy] - arr[ix,iym]
+    cos_ang = cos(ang)
     en += 0.5*(1-3*(cos_ang**2))
 
     return en
