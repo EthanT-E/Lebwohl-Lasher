@@ -12,7 +12,7 @@ jit MC_step() : N/A Doesn't work due to the large inlcusion of the np methods
 
 njit one_energy() + njit get_order() + njit all_energy: 1.378703 speed-up: 6.0565
 
-njit + vectorize one_energy() + njit get_order() + njit all_energy: 1.348016 speed-up: 6.1944
+n685800jit + vectorize one_energy() + njit get_order() + njit all_energy: 1.348016 speed-up: 6.1944
 
 
 size = 50

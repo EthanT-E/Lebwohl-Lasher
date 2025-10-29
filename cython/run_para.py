@@ -28,7 +28,7 @@ import datetime
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
-from Leb_cython import one_energy, all_energy, initdat, get_order, MC_step
+from Leb_para import initdat, one_energy, all_energy, get_order, MC_step
 
 # =======================================================================
 
@@ -194,39 +194,40 @@ def savedat(arr, nsteps, Ts, runtime, ratio, energy, order, nmax):
     #       of 1 attempted change per lattice site.  Working with reduced
     #       temperature Ts = kT/epsilon.  Function returns the acceptance
     #       ratio for information.  This is the fraction of attempted changes
-    #     #     #         Returns:
-    #     #     #           accept/(nmax**2) (float) = acceptance ratio for current MCS.
-    #     #     #     """
-    #     #     #
-    #     #     # Pre-compute some random numbers.  This is faster than
-    #     #     # using lots of individual calls.  "scale" sets the width
-    #     #     # of the distribution for the angle changes - increases
-    #     #     # with temperature.
-    #     #     scale = 0.1+Ts
-    #     #     accept = 0
-    #     #     xran = np.random.randint(0, high=nmax, size=(nmax, nmax))
-    #     #     yran = np.random.randint(0, high=nmax, size=(nmax, nmax))
-    #     #     aran = np.random.normal(scale=scale, size=(nmax, nmax))
-    #     #     for i in range(nmax):
-    #     #         for j in range(nmax):
-    #     #             ix = xran[i, j]
-    #     #             iy = yran[i, j]
-    #     #             ang = aran[i, j]
-    #     #             en0 = one_energy(arr, ix, iy, nmax)
-    #     #             arr[ix, iy] += ang
-    #     #             en1 = one_energy(arr, ix, iy, nmax)
-    #     #             if en1 <= en0:
-    #     #                 accept += 1
-    #     #             else:
-    #     #                 # Now apply the Monte Carlo test - compare
-    #     #                 # exp( -(E_new - E_old) / T* ) >= rand(0,1)
-    #     #                 boltz = np.exp(-(en1 - en0) / Ts)
+    #     #       efficient simulation.
+    #     #         Returns:
+    #     #           accept/(nmax**2) (float) = acceptance ratio for current MCS.
+    #     #     """
     #     #
-    #     #                 if boltz >= np.random.uniform(0.0, 1.0):
-    #     #                     accept += 1
-    #     #                 else:
-    #     #                     arr[ix, iy] -= ang
-    #     #     return accept/(nmax*nmax)
+    #     # Pre-compute some random numbers.  This is faster than
+    #     # using lots of individual calls.  "scale" sets the width
+    #     # of the distribution for the angle changes - increases
+    #     # with temperature.
+    #     scale = 0.1+Ts
+    #     accept = 0
+    #     xran = np.random.randint(0, high=nmax, size=(nmax, nmax))
+    #     yran = np.random.randint(0, high=nmax, size=(nmax, nmax))
+    #     aran = np.random.normal(scale=scale, size=(nmax, nmax))
+    #     for i in range(nmax):
+    #         for j in range(nmax):
+    #             ix = xran[i, j]
+    #             iy = yran[i, j]
+    #             ang = aran[i, j]
+    #             en0 = one_energy(arr, ix, iy, nmax)
+    #             arr[ix, iy] += ang
+    #             en1 = one_energy(arr, ix, iy, nmax)
+    #             if en1 <= en0:
+    #                 accept += 1
+    #             else:
+    #                 # Now apply the Monte Carlo test - compare
+    #                 # exp( -(E_new - E_old) / T* ) >= rand(0,1)
+    #                 boltz = np.exp(-(en1 - en0) / Ts)
+    #
+    #                 if boltz >= np.random.uniform(0.0, 1.0):
+    #                     accept += 1
+    #                 else:
+    #                     arr[ix, iy] -= ang
+    #     return accept/(nmax*nmax)
 # =======================================================================
 
 
@@ -288,6 +289,5 @@ if __name__ == '__main__':
     else:
         print("Usage: python {} <ITERATIONS> <SIZE> <TEMPERATURE> <PLOTFLAG>".format(
             sys.argv[0]))
-# =======================================================================
 # =======================================================================
 # =======================================================================
