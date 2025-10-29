@@ -9,4 +9,4 @@ Basic one_energy and all_energy:4.357508 speed-up: 1.9163
 
 basic one_energy, all_energy, get_order: 3.230133 speed-up: 2.5851
 
-Comprehensive one_energy, all_energy, get_order, MC_step: 0.685800 speed-up : 12.1758
+Comprehensive one_energy, all_energy, get_order, MC_step: 0.818497 speed-up : 10.2018
