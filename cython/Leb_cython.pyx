@@ -113,9 +113,13 @@ cpdef double MC_step(double[:,:] arr,double Ts,int nmax):
     cdef:
         double scale = 0.1+Ts
         int accept = 0
-        cnp.ndarray[dtype=cnp.int64_t,ndim=2] xran = np.random.randint(0, high=nmax, size=(nmax, nmax),dtype=np.int64)
-        cnp.ndarray[dtype=cnp.int64_t,ndim=2] yran = np.random.randint(0, high=nmax, size=(nmax, nmax), dtype=np.int64)
-        cnp.ndarray[dtype=cnp.float64_t,ndim=2] aran = np.random.normal(scale=scale, size=(nmax, nmax))
+        # cnp.ndarray[dtype=cnp.int64_t,ndim=2] xran = np.random.randint(0, high=nmax, size=(nmax, nmax),dtype=np.int64)
+        # cnp.ndarray[dtype=cnp.int64_t,ndim=2] yran = np.random.randint(0, high=nmax, size=(nmax, nmax), dtype=np.int64)
+        # cnp.ndarray[dtype=cnp.float64_t,ndim=2] aran = np.random.normal(scale=scale, size=(nmax, nmax))
+        long[:,:] xran = np.random.randint(0, high=nmax, size=(nmax, nmax),dtype=np.int64)
+        long[:,:] yran = np.random.randint(0, high=nmax, size=(nmax, nmax), dtype=np.int64)
+        double[:,:] aran = np.random.normal(scale=scale, size=(nmax, nmax))
+        double[:,:] boltzman_arr = np.random.uniform(0.0, 1.0,size=(nmax,nmax))
         int i,j,ix,iy
         double ang, en0, en1, boltz
     for i in range(nmax):
@@ -133,7 +137,7 @@ cpdef double MC_step(double[:,:] arr,double Ts,int nmax):
                 # exp( -(E_new - E_old) / T* ) >= rand(0,1)
                 boltz = np.exp(-(en1 - en0) / Ts)
 
-                if boltz >= np.random.uniform(0.0, 1.0):
+                if boltz >= boltzman_arr[ix,iy]:
                     accept += 1
                 else:
                     arr[ix, iy] -= ang
