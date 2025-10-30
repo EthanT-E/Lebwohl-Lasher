@@ -269,6 +269,7 @@ def MC_step(arr: np.ndarray, Ts: float, nmax: int) -> float:
     xran = np.random.randint(0, high=nmax, size=(nmax, nmax))
     yran = np.random.randint(0, high=nmax, size=(nmax, nmax))
     aran = np.random.normal(scale=scale, size=(nmax, nmax))
+    boltz_arr = np.random.uniform(0.0, 1.0, size=(nmax, nmax))
     for i in range(nmax):
         for j in range(nmax):
             ix = xran[i, j]
@@ -284,7 +285,7 @@ def MC_step(arr: np.ndarray, Ts: float, nmax: int) -> float:
                 # exp( -(E_new - E_old) / T* ) >= rand(0,1)
                 boltz = np.exp(-(en1 - en0) / Ts)
 
-                if boltz >= np.random.uniform(0.0, 1.0):
+                if boltz >= boltz_arr[i, j]:
                     accept += 1
                 else:
                     arr[ix, iy] -= ang
