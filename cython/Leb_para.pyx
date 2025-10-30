@@ -1,6 +1,6 @@
 import cython
 from cython.parallel cimport parallel, prange
-from libc.math cimport cos, sin
+from libc.math cimport cos, sin, exp
 import numpy as np
 cimport numpy as cnp
 
@@ -124,7 +124,7 @@ cpdef double MC_step(double[:,:] arr,double Ts,int nmax):
         double[:,:] boltzman_arr = np.random.uniform(0.0, 1.0,size=(nmax,nmax))
         int i,j,ix,iy
         double ang, en0, en1, boltz
-    for i in range(nmax):
+    for i in prange(nmax,nogil=True):
         for j in range(nmax):
             ix = xran[i, j]
             iy = yran[i, j]
@@ -137,7 +137,7 @@ cpdef double MC_step(double[:,:] arr,double Ts,int nmax):
             else:
                 # Now apply the Monte Carlo test - compare
                 # exp( -(E_new - E_old) / T* ) >= rand(0,1)
-                boltz = np.exp(-(en1 - en0) / Ts)
+                boltz = exp(-(en1 - en0) / Ts)
 
                 if boltz >= boltzman_arr[ix,iy]:
                     accept += 1
