@@ -1,4 +1,5 @@
 import cython
+from cython.parallel cimport parallel, prange
 from libc.math cimport cos, sin
 import numpy as np
 cimport numpy as cnp
@@ -17,7 +18,8 @@ cpdef double[:,:] initdat(int nmax):
     cdef cnp.ndarray[dtype=cnp.float64_t,ndim=2] arr = np.random.random_sample((nmax, nmax))*2.0*np.pi
     return arr
 
-cpdef double one_energy(double[:,:] arr, int ix, int iy,int nmax):
+@cython.boundscheck(False)
+cpdef double one_energy(double[:,:] arr, int ix, int iy,int nmax) nogil:
     cdef:
         double en = 0, ang
         int ixp = (ix+1)%nmax
@@ -54,7 +56,7 @@ cpdef double all_energy(double[:,:] arr, int nmax):
     """
     cdef double enall = 0.0 #cdefing this doesn't impact the performance tbh
     cdef int i,j
-    for i in range(nmax):
+    for i in prange(nmax,nogil=True):
         for j in range(nmax):
             enall += one_energy(arr, i, j, nmax)
     return enall
