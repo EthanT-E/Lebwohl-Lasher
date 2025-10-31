@@ -91,6 +91,7 @@ cpdef double get_order(double[:,:] arr, int nmax):
     eigenvalues, eigenvectors = np.linalg.eig(Qab)
     return eigenvalues.max()
 
+@cython.boundscheck(False)
 cpdef double MC_step(double[:,:] arr,double Ts,int nmax):
     """
     Arguments:
@@ -139,7 +140,7 @@ cpdef double MC_step(double[:,:] arr,double Ts,int nmax):
                 # exp( -(E_new - E_old) / T* ) >= rand(0,1)
                 boltz = exp(-(en1 - en0) / Ts)
 
-                if boltz >= boltzman_arr[ix,iy]:
+                if boltz >= boltzman_arr[i,j]:
                     accept += 1
                 else:
                     arr[ix, iy] -= ang
