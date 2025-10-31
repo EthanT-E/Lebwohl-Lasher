@@ -1,5 +1,5 @@
 import pytest
-from Leb_mpi import one_energy
+from Leb_mpi import one_energy, all_energy
 import numpy as np
 
 
@@ -15,3 +15,11 @@ def test_one_energy(x, y, expected):
     left_col = np.zeros(8)
     right_col = np.ones(8)
     assert one_energy(matrix, x, y, 8, 4, left_col, right_col) == expected
+
+
+def test_all_energy():
+    matrix = np.ones((8, 4))
+    left_col = np.zeros(8)
+    right_col = np.ones(8)
+    assert all_energy(matrix, 8, 4, left_col,
+                      right_col) == pytest.approx(-119.503)
