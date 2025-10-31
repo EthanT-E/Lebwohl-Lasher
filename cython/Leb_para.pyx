@@ -18,6 +18,7 @@ cpdef double[:,:] initdat(int nmax):
     cdef cnp.ndarray[dtype=cnp.float64_t,ndim=2] arr = np.random.random_sample((nmax, nmax))*2.0*np.pi
     return arr
 
+@cython.wraparound(False)
 @cython.boundscheck(False)
 cpdef double one_energy(double[:,:] arr, int ix, int iy,int nmax) nogil:
     cdef:
@@ -91,6 +92,7 @@ cpdef double get_order(double[:,:] arr, int nmax):
     eigenvalues, eigenvectors = np.linalg.eig(Qab)
     return eigenvalues.max()
 
+@cython.wraparound(False)
 @cython.boundscheck(False)
 cpdef double MC_step(double[:,:] arr,double Ts,int nmax):
     """
@@ -116,10 +118,10 @@ cpdef double MC_step(double[:,:] arr,double Ts,int nmax):
     cdef:
         double scale = 0.1+Ts
         int accept = 0
-        cnp.ndarray[dtype=cnp.int64_t,ndim=2] xran = np.random.randint(0, high=nmax, size=(nmax, nmax),dtype=np.int64)
-        cnp.ndarray[dtype=cnp.int64_t,ndim=2] yran = np.random.randint(0, high=nmax, size=(nmax, nmax), dtype=np.int64)
-        cnp.ndarray[dtype=cnp.float64_t,ndim=2] aran = np.random.normal(scale=scale, size=(nmax, nmax))
-        cnp.ndarray[dtype=cnp.float64_t,ndim=2] boltzman_arr = np.random.uniform(0.0, 1.0,size=(nmax,nmax))
+        cnp.ndarray[dtype=cnp.int64_t,ndim=2, mode='c'] xran = np.random.randint(0, high=nmax, size=(nmax, nmax),dtype=np.int64)
+        cnp.ndarray[dtype=cnp.int64_t,ndim=2, mode='c'] yran = np.random.randint(0, high=nmax, size=(nmax, nmax), dtype=np.int64)
+        cnp.ndarray[dtype=cnp.float64_t,ndim=2, mode='c'] aran = np.random.normal(scale=scale, size=(nmax, nmax))
+        cnp.ndarray[dtype=cnp.float64_t,ndim=2, mode='c'] boltzman_arr = np.random.uniform(0.0, 1.0,size=(nmax,nmax))
         int i,j,ix,iy
         double ang, en0, en1, boltz
     for i in prange(nmax,nogil=True):
