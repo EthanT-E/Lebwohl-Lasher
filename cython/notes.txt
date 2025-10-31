@@ -11,16 +11,20 @@ Basic one_energy, all_energy, get_order: 3.230133 speed-up: 2.5851
 
 Comprehensive one_energy, all_energy, get_order, MC_step: 0.201557 speed-up : 41.4284
 
+omp: 2.339416 speed-up:
+
 size = 50
 base time = 52.293747
+omp: 2.084061 speed-up:
 
 Comprehensive one_energy, all_energy, get_order, MC_step: 1.065408 speed-up : 49.0833
 
 size = 100
 Base time = 244.386364
 Comprehensive one_energy, all_energy, get_order, MC_step: 3.839935 speed-up : 63.6434
+omp: 3.165737 speed-up:
 
 
 size = 500
 Comprehensive one_energy, all_energy, get_order, MC_step: 88.344674 speed-up relative to serial_cython : 1
-
+omp: 37.808014 speed-up relative to serial cython:
