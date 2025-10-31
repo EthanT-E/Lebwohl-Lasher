@@ -28,67 +28,50 @@ cpdef double one_energy(double[:,:] arr, int ix, int iy,int nmax,int task_width,
         int iyp = (iy+1)%nmax
         int iym = (iy-1)%nmax
         double cos_ang = 0
-    if(ix == task_width -1):
-        ang = arr[iy,ix] - arr[iyp,ix]
-        cos_ang = cos(ang)
-        en += 0.5*(1-3*(cos_ang**2))
-        ang = arr[iy,ix] - arr[iym,ix]
-        cos_ang = cos(ang)
-        en += 0.5*(1-3*(cos_ang**2))
-        ang = arr[iy,ix] - right_col[iy]
-        cos_ang = cos(ang)
-        en += 0.5*(1-3*(cos_ang**2))
-        ang = arr[iy,ix] - arr[iy,ixm]
-        cos_ang = cos(ang)
-        en += 0.5*(1-3*(cos_ang**2))
 
-    elif(ix == 0):
-        ang = arr[iy,ix] - arr[iyp,ix]
-        cos_ang = cos(ang)
-        en += 0.5*(1-3*(cos_ang**2))
-        ang = arr[iy,ix] - arr[iym,ix]
-        cos_ang = cos(ang)
-        en += 0.5*(1-3*(cos_ang**2))
-        ang = arr[iy,ix] - arr[iy,ixp]
-        cos_ang = cos(ang)
-        en += 0.5*(1-3*(cos_ang**2))
-        ang = arr[iy,ix] - left_col[iy]
-        cos_ang = cos(ang)
-        en += 0.5*(1-3*(cos_ang**2))
+    ang = arr[iy,ix] - arr[iyp,ix]
+    cos_ang = cos(ang)
+    en += 0.5*(1-3*(cos_ang**2))
+    ang = arr[iy,ix] - arr[iym,ix]
+    cos_ang = cos(ang)
+    en += 0.5*(1-3*(cos_ang**2))
+    if (ix == task_width -1):
+        ang = arr[iy,ix] - right_col[iy]
     else:
-        ang = arr[iy,ix] - arr[iyp,ix]
-        cos_ang = cos(ang)
-        en += 0.5*(1-3*(cos_ang**2))
-        ang = arr[iy,ix] - arr[iym,ix]
-        cos_ang = cos(ang)
-        en += 0.5*(1-3*(cos_ang**2))
         ang = arr[iy,ix] - arr[iy,ixp]
-        cos_ang = cos(ang)
-        en += 0.5*(1-3*(cos_ang**2))
+    cos_ang = cos(ang)
+    en += 0.5*(1-3*(cos_ang**2))
+    if (ix == 0):
+        ang = arr[iy,ix] - left_col[iy]
+    else:
         ang = arr[iy,ix] - arr[iy,ixm]
-        cos_ang = cos(ang)
-        en += 0.5*(1-3*(cos_ang**2))
+    cos_ang = cos(ang)
+    en += 0.5*(1-3*(cos_ang**2))
 
     return en
 
-# cpdef double all_energy(double[:,:] arr, int nmax):
-#     """
-#     Arguments:
-#           arr (float(nmax,nmax)) = array that contains lattice data;
-#       nmax (int) = side length of square lattice.
-#     Description:
-#       Function to compute the energy of the entire lattice. Output
-#       is in reduced units (U/epsilon).
-#         Returns:
-#           enall (float) = reduced energy of lattice.
-#     """
-#     cdef double enall = 0.0 #cdefing this doesn't impact the performance tbh
-#     cdef int i,j
-#     for i in range(nmax):
-#         for j in range(nmax):
-#             enall += one_energy(arr, i, j, nmax)
-#     return enall
-# 
+cpdef double all_energy(double[:,:] arr, int nmax,int task_width,double[:] left_col,double[:] right_col):
+    """
+    Arguments:
+          arr (float(nmax,nmax)) = array that contains lattice data;
+        nmax (int) = side length of square lattice.
+        task_width(int) width of the task
+        left_col(double(nmax)) the crystals to the left of arr
+        right_col(double(nmax)) the crystals to the right of arr
+
+    Description:
+      Function to compute the energy of the entire lattice. Output
+      is in reduced units (U/epsilon).
+        Returns:
+          enall (float) = reduced energy of lattice.
+    """
+    cdef double enall = 0.0 #cdefing this doesn't impact the performance tbh
+    cdef int x,y
+    for x in range(task_width):
+        for y in range(nmax):
+            enall += one_energy(arr, x, y, nmax,task_width,left_col,right_col)
+    return enall
+
 # cpdef double get_order(double[:,:] arr, int nmax):
 #     """
 #     Arguments:
