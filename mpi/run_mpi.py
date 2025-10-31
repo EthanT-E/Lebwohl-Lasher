@@ -148,37 +148,81 @@ def main(program, nsteps, nmax, temp, pflag):
         if (rank == 0):
             plotdat(lattice, pflag, nmax)
         COMM.Barrier
-#     # Create arrays to store energy, acceptance ratio and order parameter
-#     energy = np.zeros(nsteps+1, dtype=np.float64)
-#     ratio = np.zeros(nsteps+1, dtype=np.float64)
-#     order = np.zeros(nsteps+1, dtype=np.float64)
-#     # Set initial values in arrays
-#     energy[0] = all_energy(lattice, nmax)
-#     ratio[0] = 0.5  # ideal value
-#     order[0] = get_order(lattice, nmax)
-#
-#     # Begin doing and timing some MC steps.
-#     initial = time.time()
-#     for it in range(1, nsteps+1):
-#         ratio[it] = MC_step(lattice, temp, nmax)
-#         energy[it] = all_energy(lattice, nmax)
-#         order[it] = get_order(lattice, nmax)
-#     final = time.time()
-#     runtime = final-initial
-#
-#     # Final outputs
-#     print("{}: Size: {:d}, Steps: {:d}, T*: {:5.3f}: Order: {:5.3f}, Time: {:8.6f} s".format(
-#         program, nmax, nsteps, temp, order[nsteps-1], runtime))
-#     # Plot final frame of lattice and generate output file
-#     savedat(lattice, nsteps, temp, runtime, ratio, energy, order, nmax)
-#     plotdat(lattice, pflag, nmax)
-#
+    # Create arrays to store energy, acceptance ratio and order parameter
+    energy = np.zeros(nsteps+1, dtype=np.float64)
+    ratio = np.zeros(nsteps+1, dtype=np.float64)
+    order = np.zeros(nsteps+1, dtype=np.float64)
+    # Set initial values in arrays
+    energy[0] = all_energy(lattice, nmax)
+    ratio[0] = 0.5  # ideal value
+    order[0] = get_order(lattice, nmax)
+
+    task_ratio = 0
+    task_energy = 0
+    task_order = 0
+
+    # Buffers for the columns of needed adjacent ranks
+    left_column_send = np.ndarray(nmax)  # The right most column
+    right_column_send = np.ndarray(nmax)  # The left most column
+    # The column to the left
+    left_column_rec = np.empty(nmax, dtype=np.float64)
+    # the columnn to the right
+    right_column_rec = np.empty(nmax, dtype=np.float64)
+
+    # Begin doing and timing some MC steps.
+    initial = time.time()
+    for it in range(1, nsteps+1):
+        if rank % 2 == 0:
+            task_ratio = MC_step(lattice, temp, nmax)
+            if rank == 0:
+                left_column_send = task_lattice[:, -1]
+                right_column_send = task_lattice[:, 0]
+                COMM.Send([left_column_send, MPI.DOUBLE], dest=1)
+                COMM.Send([right_column_send, MPI.DOUBLE], dest=size-1)
+            elif rank == size - 1:
+                left_column_send = task_lattice[:, -1]
+                right_column_send = task_lattice[:, 0]
+                COMM.Send([left_column_send, MPI.DOUBLE], dest=0)
+                COMM.Send([right_column_send, MPI.DOUBLE], dest=rank-1)
+            else:
+                left_column_send = task_lattice[:, -1]
+                right_column_send = task_lattice[:, 0]
+                COMM.Send([left_column_send, MPI.DOUBLE], dest=rank+1)
+                COMM.Send([right_column_send, MPI.DOUBLE], dest=rank-1)
+        else:
+            if rank != size - 1:
+                COMM.Recv([left_column_rec, MPI.DOUBLE], source=rank-1)
+                COMM.Recv([right_column_rec, MPI.DOUBLE], source=rank+1)
+            else:
+                COMM.Recv([left_column_rec, MPI.DOUBLE], source=rank-1)
+                COMM.Recv([right_column_rec, MPI.DOUBLE], source=0)
+    if rank == 0:
+        print(left_column_send[0])
+    COMM.Barrier()
+    if rank == 2:
+        print(right_column_send[0])
+    COMM.Barrier()
+    if rank == 1:
+        print(left_column_rec)
+        print(right_column_rec)
 
 
-# =======================================================================
-# Main part of program, getting command line arguments and calling
-# main simulation function.
-#
+        #         energy[it] = all_energy(lattice, nmax)
+        #         order[it] = get_order(lattice, nmax)
+        #     final = time.time()
+        #     runtime = final-initial
+        #
+        #     # Final outputs
+        #     print("{}: Size: {:d}, Steps: {:d}, T*: {:5.3f}: Order: {:5.3f}, Time: {:8.6f} s".format(
+        #         program, nmax, nsteps, temp, order[nsteps-1], runtime))
+        #     # Plot final frame of lattice and generate output file
+        #     savedat(lattice, nsteps, temp, runtime, ratio, energy, order, nmax)
+        #     plotdat(lattice, pflag, nmax)
+        #
+        # =======================================================================
+        # Main part of program, getting command line arguments and calling
+        # main simulation function.
+        #
 if __name__ == '__main__':
     if int(len(sys.argv)) == 5:
         PROGNAME = sys.argv[0]
