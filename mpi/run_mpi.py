@@ -140,7 +140,7 @@ def main(program, nsteps, nmax, temp, pflag):
         print("nmax must be divisable by the number of tasks")
         COMM.Abort()
     task_grid_width = nmax//size
-    task_lattice = initdat(nmax, size)
+    task_lattice = initdat(nmax, task_grid_width)
     lattice = np.ndarray((nmax, nmax))
     # Plot initial frame of lattice
     if (pflag != 0):
