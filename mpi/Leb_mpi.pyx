@@ -23,49 +23,49 @@ cpdef double[:,:] initdat(int nmax,int MPI_size):
 cpdef double one_energy(double[:,:] arr, int ix, int iy,int nmax,int task_width,double[:] left_col,double[:] right_col):
     cdef:
         double en = 0, ang
-        int ixp = (ix +1)%task_width
-        int ixm = (ix -1)%task_width
+        int ixp = (ix +1)%task_width# might remove the %task_width
+        int ixm = (ix -1)%task_width# might remove the %task_width
         int iyp = (iy+1)%nmax
         int iym = (iy-1)%nmax
         double cos_ang = 0
-    if (ix == 0):
-        ang = arr[ix,iy] - arr[ixp,iy]
+    if(ix == task_width -1):
+        ang = arr[iy,ix] - arr[iyp,ix]
         cos_ang = cos(ang)
         en += 0.5*(1-3*(cos_ang**2))
-        ang = arr[ix,iy] - left_col[iy]
+        ang = arr[iy,ix] - arr[iym,ix]
         cos_ang = cos(ang)
         en += 0.5*(1-3*(cos_ang**2))
-        ang = arr[ix,iy] - arr[ix,iyp]
+        ang = arr[iy,ix] - right_col[iy]
         cos_ang = cos(ang)
         en += 0.5*(1-3*(cos_ang**2))
-        printf("%d\n",iym)
-        ang = arr[ix,iy] - arr[ix,iym]
+        ang = arr[iy,ix] - arr[iy,ixm]
         cos_ang = cos(ang)
         en += 0.5*(1-3*(cos_ang**2))
-    elif (ix == task_width -1):
-        ang = arr[ix,iy] - right_col[iy]
+
+    elif(ix == 0):
+        ang = arr[iy,ix] - arr[iyp,ix]
         cos_ang = cos(ang)
         en += 0.5*(1-3*(cos_ang**2))
-        ang = arr[ix,iy] - arr[ixm,iy]
+        ang = arr[iy,ix] - arr[iym,ix]
         cos_ang = cos(ang)
         en += 0.5*(1-3*(cos_ang**2))
-        ang = arr[ix,iy] - arr[ix,iyp]
+        ang = arr[iy,ix] - arr[iy,ixp]
         cos_ang = cos(ang)
         en += 0.5*(1-3*(cos_ang**2))
-        ang = arr[ix,iy] - arr[ix,iym]
+        ang = arr[iy,ix] - left_col[iy]
         cos_ang = cos(ang)
         en += 0.5*(1-3*(cos_ang**2))
     else:
-        ang = arr[ix,iy] - arr[ixp,iy]
+        ang = arr[iy,ix] - arr[iyp,ix]
         cos_ang = cos(ang)
         en += 0.5*(1-3*(cos_ang**2))
-        ang = arr[ix,iy] - arr[ixm,iy]
+        ang = arr[iy,ix] - arr[iym,ix]
         cos_ang = cos(ang)
         en += 0.5*(1-3*(cos_ang**2))
-        ang = arr[ix,iy] - arr[ix,iyp]
+        ang = arr[iy,ix] - arr[iy,ixp]
         cos_ang = cos(ang)
         en += 0.5*(1-3*(cos_ang**2))
-        ang = arr[ix,iy] - arr[ix,iym]
+        ang = arr[iy,ix] - arr[iy,ixm]
         cos_ang = cos(ang)
         en += 0.5*(1-3*(cos_ang**2))
 
