@@ -1,8 +1,16 @@
 from distutils.core import setup
+from distutils.extension import Extension
 from Cython.Build import cythonize
 import numpy
 
+ext_modules = [
+    Extension(
+        "Leb_LL",
+        ["./Leb_cython.pyx"],
+        extra_compile_args=['-O3']
+    )
+]
 setup(name="cython_LL",
-      ext_modules=cythonize("./Leb_cython.pyx"),
+      ext_modules=cythonize(ext_modules),
       include_dirs=[numpy.get_include()],
       )

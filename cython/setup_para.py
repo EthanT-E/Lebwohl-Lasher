@@ -7,7 +7,7 @@ ext_modules = [
     Extension(
         "Leb_para",
         ["./Leb_para.pyx"],
-        extra_compile_args=['-fopenmp'],
+        extra_compile_args=['-fopenmp', '-O3'],
         extra_link_args=['-fopenmp'],
     )
 ]
