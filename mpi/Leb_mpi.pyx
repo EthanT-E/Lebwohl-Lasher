@@ -46,28 +46,28 @@ cpdef double one_energy_whole_lattice(double[:,:] arr, int ix, int iy,int nmax):
 cpdef double one_energy(double[:,:] arr, int ix, int iy,int nmax,int task_width,double[:] left_col,double[:] right_col):
     cdef:
         double en = 0, ang
-        int ixp = (ix +1)%task_width# might remove the %task_width
-        int ixm = (ix -1)%task_width# might remove the %task_width
-        int iyp = (iy+1)%nmax
-        int iym = (iy-1)%nmax
+        int iyp = (ix +1)%task_width# might remove the %task_width
+        int iym = (ix -1)%task_width# might remove the %task_width
+        int ixp = (iy+1)%nmax
+        int ixm = (iy-1)%nmax
         double cos_ang = 0
 
-    ang = arr[iy,ix] - arr[iyp,ix]
+    ang = arr[ix,iy] - arr[ixp,iy]
     cos_ang = cos(ang)
     en += 0.5*(1-3*(cos_ang**2))
-    ang = arr[iy,ix] - arr[iym,ix]
+    ang = arr[ix,iy] - arr[ixm,iy]
     cos_ang = cos(ang)
     en += 0.5*(1-3*(cos_ang**2))
     if (ix == task_width -1):
-        ang = arr[iy,ix] - right_col[iy]
+        ang = arr[ix,iy] - right_col[iy]
     else:
-        ang = arr[iy,ix] - arr[iy,ixp]
+        ang = arr[ix,iy] - arr[ix,iyp]
     cos_ang = cos(ang)
     en += 0.5*(1-3*(cos_ang**2))
     if (ix == 0):
-        ang = arr[iy,ix] - left_col[iy]
+        ang = arr[ix,iy] - left_col[iy]
     else:
-        ang = arr[iy,ix] - arr[iy,ixm]
+        ang = arr[ix,iy] - arr[ix,iym]
     cos_ang = cos(ang)
     en += 0.5*(1-3*(cos_ang**2))
 
@@ -124,56 +124,56 @@ cpdef double get_order(double[:,:] arr, int nmax):# MPIthis !!!!!!!!!!!!!!!!!!!!
     eigenvalues, eigenvectors = np.linalg.eig(Qab)
     return eigenvalues.max()
 # 
-# cpdef double MC_step(double[:,:] arr,double Ts,int nmax):
-#     """
-#     Arguments:
-#           arr (float(nmax,nmax)) = array that contains lattice data;
-#           Ts (float) = reduced temperature (range 0 to 2);
-#       nmax (int) = side length of square lattice.
-#     Description:
-#       Function to perform one MC step, which consists of an average
-#       of 1 attempted change per lattice site.  Working with reduced
-#       temperature Ts = kT/epsilon.  Function returns the acceptance
-#       ratio for information.  This is the fraction of attempted changes
-#       that are successful.  Generally aim to keep this around 0.5 for
-#       efficient simulation.
-#         Returns:
-#           accept/(nmax**2) (float) = acceptance ratio for current MCS.
-#     """
-#     #
-#     # Pre-compute some random numbers.  This is faster than
-#     # using lots of individual calls.  "scale" sets the width
-#     # of the distribution for the angle changes - increases
-#     # with temperature.
-#     cdef:
-#         double scale = 0.1+Ts
-#         int accept = 0
-#         cnp.ndarray[dtype=cnp.int64_t,ndim=2] xran = np.random.randint(0, high=nmax, size=(nmax, nmax),dtype=np.int64)
-#         cnp.ndarray[dtype=cnp.int64_t,ndim=2] yran = np.random.randint(0, high=nmax, size=(nmax, nmax), dtype=np.int64)
-#         cnp.ndarray[dtype=cnp.float64_t,ndim=2] aran = np.random.normal(scale=scale, size=(nmax, nmax))
-#         double[:,:] boltzman_arr = np.random.uniform(0.0, 1.0,size=(nmax,nmax))
-#         int i,j,ix,iy
-#         double ang, en0, en1, boltz
-#     for i in range(nmax):
-#         for j in range(nmax):
-#             ix = xran[i, j]
-#             iy = yran[i, j]
-#             ang = aran[i, j]
-#             en0 = one_energy(arr, ix, iy, nmax)
-#             arr[ix, iy] += ang
-#             en1 = one_energy(arr, ix, iy, nmax)
-#             if en1 <= en0:
-#                 accept += 1
-#             else:
-#                 # Now apply the Monte Carlo test - compare
-#                 # exp( -(E_new - E_old) / T* ) >= rand(0,1)
-#                 boltz = exp(-(en1 - en0) / Ts)
-# 
-#                 if boltz >= boltzman_arr[i,j]:
-#                     accept += 1
-#                 else:
-#                     arr[ix, iy] -= ang
-#     return accept/(nmax*nmax)
+cpdef double MC_step(double[:,:] arr,double Ts,int nmax,int task_width,double[:] left_col,double[:] right_col):
+    """
+    Arguments:
+          arr (float(nmax,nmax)) = array that contains lattice data;
+          Ts (float) = reduced temperature (range 0 to 2);
+      nmax (int) = side length of square lattice.
+    Description:
+      Function to perform one MC step, which consists of an average
+      of 1 attempted change per lattice site.  Working with reduced
+      temperature Ts = kT/epsilon.  Function returns the acceptance
+      ratio for information.  This is the fraction of attempted changes
+      that are successful.  Generally aim to keep this around 0.5 for
+      efficient simulation.
+        Returns:
+          accept/(nmax**2) (float) = acceptance ratio for current MCS.
+    """
+    #
+    # Pre-compute some random numbers.  This is faster than
+    # using lots of individual calls.  "scale" sets the width
+    # of the distribution for the angle changes - increases
+    # with temperature.
+    cdef:
+        double scale = 0.1+Ts
+        int accept = 0
+        cnp.ndarray[dtype=cnp.int64_t,ndim=2] xran = np.random.randint(0, high=nmax, size=(nmax, task_width),dtype=np.int64)
+        cnp.ndarray[dtype=cnp.int64_t,ndim=2] yran = np.random.randint(0, high=task_width, size=(nmax, task_width), dtype=np.int64)
+        cnp.ndarray[dtype=cnp.float64_t,ndim=2] aran = np.random.normal(scale=scale, size=(nmax, task_width))
+        double[:,:] boltzman_arr = np.random.uniform(0.0, 1.0,size=(nmax,nmax))
+        int i,j,ix,iy
+        double ang, en0, en1, boltz
+    for i in range(task_width):
+        for j in range(nmax):
+            ix = xran[j, i]
+            iy = yran[j, i]
+            ang = aran[j, i]
+            en0 = one_energy(arr, ix, iy, nmax,task_width,left_col,right_col)
+            arr[ix, iy] += ang
+            en1 = one_energy(arr, ix, iy, nmax,task_width,left_col,right_col)
+            if en1 <= en0:
+                accept += 1
+            else:
+                # Now apply the Monte Carlo test - compare
+                # exp( -(E_new - E_old) / T* ) >= rand(0,1)
+                boltz = exp(-(en1 - en0) / Ts)
+
+                if boltz >= boltzman_arr[i,j]:
+                    accept += 1
+                else:
+                    arr[ix, iy] -= ang
+    return accept/(nmax*task_width)
 #         
 # # cpdef run(double[:,:] lattice,int nsteps,int nmax,double temp):
 # #     '''

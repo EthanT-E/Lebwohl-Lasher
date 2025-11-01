@@ -28,7 +28,7 @@ import datetime
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
-from Leb_mpi import one_energy, one_energy_whole_lattice, all_energy, initdat, get_order
+from Leb_mpi import one_energy, one_energy_whole_lattice, all_energy, initdat, get_order, MC_step
 from mpi4py import MPI
 
 
@@ -143,8 +143,8 @@ def main(program, nsteps, nmax, temp, pflag):
     task_lattice = initdat(nmax, size)
     lattice = np.ndarray((nmax, nmax))
     # Plot initial frame of lattice
+    COMM.Gather(task_lattice, lattice, root=0)
     if (pflag != 0):
-        COMM.Gather(task_lattice, lattice, root=0)
         if (rank == 0):
             plotdat(lattice, pflag, nmax)
         COMM.Barrier
@@ -153,9 +153,10 @@ def main(program, nsteps, nmax, temp, pflag):
     ratio = np.zeros(nsteps+1, dtype=np.float64)
     order = np.zeros(nsteps+1, dtype=np.float64)
     # Set initial values in arrays
-    energy[0] = all_energy(lattice, nmax)
-    ratio[0] = 0.5  # ideal value
-    order[0] = get_order(lattice, nmax)
+    if rank == 0:
+        energy[0] = all_energy(lattice, nmax)
+        ratio[0] = 0.5  # ideal value
+        order[0] = get_order(lattice, nmax)
 
     task_ratio = 0
     task_energy = 0
@@ -183,6 +184,17 @@ def main(program, nsteps, nmax, temp, pflag):
 
                 left_req.Wait()
                 right_req.Wait()
+
+                left_req = COMM.Irecv(
+                    [left_column_rec, MPI.DOUBLE], source=size-1)
+                right_req = COMM.Irecv(
+                    [right_column_rec, MPI.DOUBLE], source=rank + 1)
+
+                left_req.Wait()
+                right_req.Wait()
+                task_ratio = MC_step(
+                    task_lattice, temp, nmax, task_grid_width, left_column_rec, right_column_rec)
+
             elif rank == size - 1:
                 left_column_send = task_lattice[:, -1]
                 left_req = COMM.Isend([left_column_send, MPI.DOUBLE], dest=0)
@@ -192,6 +204,16 @@ def main(program, nsteps, nmax, temp, pflag):
 
                 left_req.Wait()
                 right_req.Wait()
+
+                left_req = COMM.Irecv(
+                    [left_column_rec, MPI.DOUBLE], source=rank-1)
+                right_req = COMM.Irecv(
+                    [right_column_rec, MPI.DOUBLE], source=0)
+
+                left_req.Wait()
+                right_req.Wait()
+                task_ratio = MC_step(
+                    task_lattice, temp, nmax, task_grid_width, left_column_rec, right_column_rec)
             else:
                 left_column_send = task_lattice[:, -1]
                 left_req = COMM.Isend(
@@ -202,12 +224,34 @@ def main(program, nsteps, nmax, temp, pflag):
 
                 left_req.Wait()
                 right_req.Wait()
+
+                left_req = COMM.Irecv(
+                    [left_column_rec, MPI.DOUBLE], source=rank-1)
+                right_req = COMM.Irecv(
+                    [right_column_rec, MPI.DOUBLE], source=rank+1)
+
+                left_req.Wait()
+                right_req.Wait()
+                task_ratio = MC_step(
+                    task_lattice, temp, nmax, task_grid_width, left_column_rec, right_column_rec)
         else:
             if rank != size - 1:
                 left_req = COMM.Irecv(
                     [left_column_rec, MPI.DOUBLE], source=rank-1)
                 right_req = COMM.Irecv(
                     [right_column_rec, MPI.DOUBLE], source=rank+1)
+
+                left_req.Wait()
+                right_req.Wait()
+                task_ratio = MC_step(
+                    task_lattice, temp, nmax, task_grid_width, left_column_rec, right_column_rec)
+
+                left_column_send = task_lattice[:, -1]
+                left_req = COMM.Isend(
+                    [left_column_send, MPI.DOUBLE], dest=rank+1)
+                right_column_send = task_lattice[:, 0]
+                right_req = COMM.Isend(
+                    [right_column_send, MPI.DOUBLE], dest=rank-1)
 
                 left_req.Wait()
                 right_req.Wait()
@@ -219,39 +263,48 @@ def main(program, nsteps, nmax, temp, pflag):
 
                 left_req.Wait()
                 right_req.Wait()
+                task_ratio = MC_step(
+                    task_lattice, temp, nmax, task_grid_width, left_column_rec, right_column_rec)
 
-        COMM.Gather(task_lattice, lattice, root=0)
+                left_column_send = task_lattice[:, -1]
+                left_req = COMM.Isend(
+                    [left_column_send, MPI.DOUBLE], dest=0)
+                right_column_send = task_lattice[:, 0]
+                right_req = COMM.Isend(
+                    [right_column_send, MPI.DOUBLE], dest=rank-1)
+
+                left_req.Wait()
+                right_req.Wait()
+
+        gath_req = COMM.Igather(task_lattice, lattice, root=0)
+        temp_ratio = COMM.reduce(task_ratio, op=MPI.SUM, root=0)
+        gath_req.Wait()
         if rank == 0:
             energy[it] = all_energy(lattice, nmax)
-            # ratio[it] =  # Make function to get ratio of changed
+            # Make function to get ratio of changed
+            ratio[it] = temp_ratio/size
             order[it] = get_order(lattice, nmax)
 
     if rank == 0:
-        print(left_column_send[0])
+        plotdat(lattice, pflag, nmax)
     COMM.Barrier()
-    if rank == 2:
-        print(right_column_send[0])
-    COMM.Barrier()
-    if rank == 1:
-        print(left_column_rec)
-        print(right_column_rec)
 
-        #         energy[it] = all_energy(lattice, nmax)
-        #         order[it] = get_order(lattice, nmax)
-        #     final = time.time()
-        #     runtime = final-initial
-        #
-        #     # Final outputs
-        #     print("{}: Size: {:d}, Steps: {:d}, T*: {:5.3f}: Order: {:5.3f}, Time: {:8.6f} s".format(
-        #         program, nmax, nsteps, temp, order[nsteps-1], runtime))
-        #     # Plot final frame of lattice and generate output file
-        #     savedat(lattice, nsteps, temp, runtime, ratio, energy, order, nmax)
-        #     plotdat(lattice, pflag, nmax)
-        #
-        # =======================================================================
-        # Main part of program, getting command line arguments and calling
-        # main simulation function.
-        #
+    #         energy[it] = all_energy(lattice, nmax)
+    #         order[it] = get_order(lattice, nmax)
+    #     final = time.time()
+    #     runtime = final-initial
+    #
+    #     # Final outputs
+    #     print("{}: Size: {:d}, Steps: {:d}, T*: {:5.3f}: Order: {:5.3f}, Time: {:8.6f} s".format(
+    #         program, nmax, nsteps, temp, order[nsteps-1], runtime))
+    #     # Plot final frame of lattice and generate output file
+    #     savedat(lattice, nsteps, temp, runtime, ratio, energy, order, nmax)
+    #     plotdat(lattice, pflag, nmax)
+    #
+    # =======================================================================
+    # Main part of program, getting command line arguments and calling
+    # main simulation function.
+    #
 if __name__ == '__main__':
     if int(len(sys.argv)) == 5:
         PROGNAME = sys.argv[0]
