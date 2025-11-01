@@ -176,26 +176,49 @@ def main(program, nsteps, nmax, temp, pflag):
             # task_ratio = MC_step(lattice, temp, nmax)
             if rank == 0:
                 left_column_send = task_lattice[:, -1]
+                left_req = COMM.Isend([left_column_send, MPI.DOUBLE], dest=1)
                 right_column_send = task_lattice[:, 0]
-                COMM.Send([left_column_send, MPI.DOUBLE], dest=1)
-                COMM.Send([right_column_send, MPI.DOUBLE], dest=size-1)
+                right_req = COMM.Isend(
+                    [right_column_send, MPI.DOUBLE], dest=size-1)
+
+                left_req.Wait()
+                right_req.Wait()
             elif rank == size - 1:
                 left_column_send = task_lattice[:, -1]
+                left_req = COMM.Isend([left_column_send, MPI.DOUBLE], dest=0)
                 right_column_send = task_lattice[:, 0]
-                COMM.Send([left_column_send, MPI.DOUBLE], dest=0)
-                COMM.Send([right_column_send, MPI.DOUBLE], dest=rank-1)
+                right_req = COMM.Isend(
+                    [right_column_send, MPI.DOUBLE], dest=rank-1)
+
+                left_req.Wait()
+                right_req.Wait()
             else:
                 left_column_send = task_lattice[:, -1]
+                left_req = COMM.Isend(
+                    [left_column_send, MPI.DOUBLE], dest=rank+1)
                 right_column_send = task_lattice[:, 0]
-                COMM.Send([left_column_send, MPI.DOUBLE], dest=rank+1)
-                COMM.Send([right_column_send, MPI.DOUBLE], dest=rank-1)
+                right_req = COMM.Isend(
+                    [right_column_send, MPI.DOUBLE], dest=rank-1)
+
+                left_req.Wait()
+                right_req.Wait()
         else:
             if rank != size - 1:
-                COMM.Recv([left_column_rec, MPI.DOUBLE], source=rank-1)
-                COMM.Recv([right_column_rec, MPI.DOUBLE], source=rank+1)
+                left_req = COMM.Irecv(
+                    [left_column_rec, MPI.DOUBLE], source=rank-1)
+                right_req = COMM.Irecv(
+                    [right_column_rec, MPI.DOUBLE], source=rank+1)
+
+                left_req.Wait()
+                right_req.Wait()
             else:
-                COMM.Recv([left_column_rec, MPI.DOUBLE], source=rank-1)
-                COMM.Recv([right_column_rec, MPI.DOUBLE], source=0)
+                left_req = COMM.Irecv(
+                    [left_column_rec, MPI.DOUBLE], source=rank-1)
+                right_req = COMM.Irecv(
+                    [right_column_rec, MPI.DOUBLE], source=0)
+
+                left_req.Wait()
+                right_req.Wait()
 
         COMM.Gather(task_lattice, lattice, root=0)
         if rank == 0:
@@ -212,7 +235,6 @@ def main(program, nsteps, nmax, temp, pflag):
     if rank == 1:
         print(left_column_rec)
         print(right_column_rec)
-
 
         #         energy[it] = all_energy(lattice, nmax)
         #         order[it] = get_order(lattice, nmax)
