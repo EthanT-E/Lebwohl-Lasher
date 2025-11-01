@@ -72,7 +72,7 @@ cpdef double all_energy(double[:,:] arr, int nmax,int task_width,double[:] left_
             enall += one_energy(arr, x, y, nmax,task_width,left_col,right_col)
     return enall
 
-cpdef double get_order(double[:,:] arr, int nmax,int task_width):# MPIthis !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+cpdef double get_order(double[:,:] arr, int nmax):# MPIthis !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     """
     Arguments:
           arr (float(nmax,nmax)) = array that contains lattice data;
@@ -97,9 +97,9 @@ cpdef double get_order(double[:,:] arr, int nmax,int task_width):# MPIthis !!!!!
     for a in range(3):
         for b in range(3):
             for i in range(nmax):
-                for j in range(task_width):
+                for j in range(nmax):
                     Qab[a, b] += 3*lab[a, i, j]*lab[b, i, j] - delta[a, b]
-    Qab = Qab/(2*nmax*task_width)
+    Qab = Qab/(2*nmax*nmax)
     eigenvalues, eigenvectors = np.linalg.eig(Qab)
     return eigenvalues.max()
 # 

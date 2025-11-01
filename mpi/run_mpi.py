@@ -140,7 +140,7 @@ def main(program, nsteps, nmax, temp, pflag):
         print("nmax must be divisable by the number of tasks")
         COMM.Abort()
     task_grid_width = nmax//size
-    task_lattice = initdat(nmax, task_grid_width)
+    task_lattice = initdat(nmax, size)
     lattice = np.ndarray((nmax, nmax))
     # Plot initial frame of lattice
     if (pflag != 0):
@@ -170,7 +170,7 @@ def main(program, nsteps, nmax, temp, pflag):
     right_column_rec = np.empty(nmax, dtype=np.float64)
 
     # Begin doing and timing some MC steps.
-    initial = time.time()
+    initial = time.time()  # replace with MPI timing
     for it in range(1, nsteps+1):
         if rank % 2 == 0:
             # task_ratio = MC_step(lattice, temp, nmax)
@@ -196,6 +196,13 @@ def main(program, nsteps, nmax, temp, pflag):
             else:
                 COMM.Recv([left_column_rec, MPI.DOUBLE], source=rank-1)
                 COMM.Recv([right_column_rec, MPI.DOUBLE], source=0)
+
+        COMM.Gather(task_lattice, lattice, root=0)
+        if rank == 0:
+            energy[it] = all_energy(lattice, nmax)
+            ratio[it] =   # ideal value
+            order[it] = get_order(lattice, nmax)
+
     if rank == 0:
         print(left_column_send[0])
     COMM.Barrier()
