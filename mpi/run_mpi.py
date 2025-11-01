@@ -173,7 +173,7 @@ def main(program, nsteps, nmax, temp, pflag):
     initial = time.time()
     for it in range(1, nsteps+1):
         if rank % 2 == 0:
-            task_ratio = MC_step(lattice, temp, nmax)
+            # task_ratio = MC_step(lattice, temp, nmax)
             if rank == 0:
                 left_column_send = task_lattice[:, -1]
                 right_column_send = task_lattice[:, 0]

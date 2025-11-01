@@ -1,5 +1,5 @@
 import pytest
-from Leb_mpi import one_energy, all_energy
+from Leb_mpi import one_energy, all_energy, get_order, initdat
 import numpy as np
 
 
@@ -23,3 +23,11 @@ def test_all_energy():
     right_col = np.ones(8)
     assert all_energy(matrix, 8, 4, left_col,
                       right_col) == pytest.approx(-119.503)
+
+
+@pytest.mark.parametrize("lattice, nmax,task_width,expected", [
+    (initdat(8, 2), 8, 4, pytest.approx(0.25, abs=1e-1)),
+    (np.ones((8, 4)), 8, 4, pytest.approx(1))
+])
+def test_get_order(lattice, nmax, task_width, expected):
+    assert get_order(lattice, nmax, task_width) == expected

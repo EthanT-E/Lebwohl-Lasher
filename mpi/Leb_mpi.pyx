@@ -72,35 +72,36 @@ cpdef double all_energy(double[:,:] arr, int nmax,int task_width,double[:] left_
             enall += one_energy(arr, x, y, nmax,task_width,left_col,right_col)
     return enall
 
-# cpdef double get_order(double[:,:] arr, int nmax):
-#     """
-#     Arguments:
-#           arr (float(nmax,nmax)) = array that contains lattice data;
-#       nmax (int) = side length of square lattice.
-#     Description:
-#       Function to calculate the order parameter of a lattice
-#       using the Q tensor approach, as in equation (3) of the
-#       project notes.  Function returns S_lattice = max(eigenvalues(Q_ab)).
-#         Returns:
-#           max(eigenvalues(Qab)) (float) = order parameter for lattice.
-#     """
-#     cdef cnp.ndarray[dtype=cnp.float64_t,ndim=2] Qab = np.zeros((3, 3),dtype=np.float64)
-#     cdef cnp.ndarray[dtype=cnp.float64_t,ndim=2] delta = np.eye(3, 3,dtype=np.float64)
-#     cdef int a,b,i,j
-#     #
-#     # Generate a 3D unit vector for each cell (i,j) and
-#     # put it in a (3,i,j) array.
-#     #
-#     cdef cnp.ndarray[dtype=cnp.float64_t,ndim=3] lab = np.vstack((np.cos(arr), np.sin(arr), np.zeros_like(arr))
-#                     ).reshape(3, nmax, nmax)
-#     for a in range(3):
-#         for b in range(3):
-#             for i in range(nmax):
-#                 for j in range(nmax):
-#                     Qab[a, b] += 3*lab[a, i, j]*lab[b, i, j] - delta[a, b]
-#     Qab = Qab/(2*nmax*nmax)
-#     eigenvalues, eigenvectors = np.linalg.eig(Qab)
-#     return eigenvalues.max()
+cpdef double get_order(double[:,:] arr, int nmax,int task_width):# MPIthis !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    """
+    Arguments:
+          arr (float(nmax,nmax)) = array that contains lattice data;
+      nmax (int) = side length of square lattice.
+      task_width (int) = the width of the lattice on the task
+    Description:
+      Function to calculate the order parameter of a lattice
+      using the Q tensor approach, as in equation (3) of the
+      project notes.  Function returns S_lattice = max(eigenvalues(Q_ab)).
+        Returns:
+          max(eigenvalues(Qab)) (float) = order parameter for lattice.
+    """
+    cdef cnp.ndarray[dtype=cnp.float64_t,ndim=2] Qab = np.zeros((3, 3),dtype=np.float64)
+    cdef cnp.ndarray[dtype=cnp.float64_t,ndim=2] delta = np.eye(3, 3,dtype=np.float64)
+    cdef int a,b,i,j
+    #
+    # Generate a 3D unit vector for each cell (i,j) and
+    # put it in a (3,i,j) array.
+    #
+    cdef cnp.ndarray[dtype=cnp.float64_t,ndim=3] lab = np.vstack((np.cos(arr), np.sin(arr), np.zeros_like(arr))
+                    ).reshape(3, nmax, task_width)
+    for a in range(3):
+        for b in range(3):
+            for i in range(nmax):
+                for j in range(task_width):
+                    Qab[a, b] += 3*lab[a, i, j]*lab[b, i, j] - delta[a, b]
+    Qab = Qab/(2*nmax*task_width)
+    eigenvalues, eigenvectors = np.linalg.eig(Qab)
+    return eigenvalues.max()
 # 
 # cpdef double MC_step(double[:,:] arr,double Ts,int nmax):
 #     """
