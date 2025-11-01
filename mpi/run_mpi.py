@@ -28,7 +28,7 @@ import datetime
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
-from Leb_mpi import one_energy, all_energy, initdat, get_order, MC_step
+from Leb_mpi import one_energy, one_energy_whole_lattice, all_energy, initdat, get_order
 from mpi4py import MPI
 
 
@@ -62,7 +62,7 @@ def plotdat(arr, pflag, nmax):
         mpl.rc('image', cmap='rainbow')
         for i in range(nmax):
             for j in range(nmax):
-                cols[i, j] = one_energy(arr, i, j, nmax)
+                cols[i, j] = one_energy_whole_lattice(arr, i, j, nmax)
         norm = plt.Normalize(cols.min(), cols.max())
     elif pflag == 2:  # colour the arrows according to angle
         mpl.rc('image', cmap='hsv')
@@ -200,7 +200,7 @@ def main(program, nsteps, nmax, temp, pflag):
         COMM.Gather(task_lattice, lattice, root=0)
         if rank == 0:
             energy[it] = all_energy(lattice, nmax)
-            ratio[it] =   # ideal value
+            # ratio[it] =  # Make function to get ratio of changed
             order[it] = get_order(lattice, nmax)
 
     if rank == 0:

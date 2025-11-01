@@ -20,6 +20,29 @@ cpdef double[:,:] initdat(int nmax,int MPI_size):
     cdef cnp.ndarray[dtype=cnp.float64_t,ndim=2] arr = np.random.random_sample((nmax, width))*2.0*np.pi
     return arr
 
+cpdef double one_energy_whole_lattice(double[:,:] arr, int ix, int iy,int nmax):
+    cdef:
+        double en = 0, ang
+        int ixp = (ix +1)%nmax# might remove the %task_width
+        int ixm = (ix -1)%nmax# might remove the %task_width
+        int iyp = (iy+1)%nmax
+        int iym = (iy-1)%nmax
+        double cos_ang = 0
+
+    ang = arr[iy,ix] - arr[iyp,ix]
+    cos_ang = cos(ang)
+    en += 0.5*(1-3*(cos_ang**2))
+    ang = arr[iy,ix] - arr[iym,ix]
+    cos_ang = cos(ang)
+    en += 0.5*(1-3*(cos_ang**2))
+    ang = arr[iy,ix] - arr[iy,ixp]
+    cos_ang = cos(ang)
+    en += 0.5*(1-3*(cos_ang**2))
+    ang = arr[iy,ix] - arr[iy,ixm]
+    cos_ang = cos(ang)
+    en += 0.5*(1-3*(cos_ang**2))
+
+    return en
 cpdef double one_energy(double[:,:] arr, int ix, int iy,int nmax,int task_width,double[:] left_col,double[:] right_col):
     cdef:
         double en = 0, ang
@@ -50,12 +73,11 @@ cpdef double one_energy(double[:,:] arr, int ix, int iy,int nmax,int task_width,
 
     return en
 
-cpdef double all_energy(double[:,:] arr, int nmax,int task_width,double[:] left_col,double[:] right_col):
+cpdef double all_energy(double[:,:] arr, int nmax):
     """
     Arguments:
           arr (float(nmax,nmax)) = array that contains lattice data;
         nmax (int) = side length of square lattice.
-        task_width(int) width of the task
         left_col(double(nmax)) the crystals to the left of arr
         right_col(double(nmax)) the crystals to the right of arr
 
@@ -67,9 +89,9 @@ cpdef double all_energy(double[:,:] arr, int nmax,int task_width,double[:] left_
     """
     cdef double enall = 0.0 #cdefing this doesn't impact the performance tbh
     cdef int x,y
-    for x in range(task_width):
+    for x in range(nmax):
         for y in range(nmax):
-            enall += one_energy(arr, x, y, nmax,task_width,left_col,right_col)
+            enall += one_energy_whole_lattice(arr, x, y, nmax)
     return enall
 
 cpdef double get_order(double[:,:] arr, int nmax):# MPIthis !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -77,7 +99,6 @@ cpdef double get_order(double[:,:] arr, int nmax):# MPIthis !!!!!!!!!!!!!!!!!!!!
     Arguments:
           arr (float(nmax,nmax)) = array that contains lattice data;
       nmax (int) = side length of square lattice.
-      task_width (int) = the width of the lattice on the task
     Description:
       Function to calculate the order parameter of a lattice
       using the Q tensor approach, as in equation (3) of the
@@ -93,7 +114,7 @@ cpdef double get_order(double[:,:] arr, int nmax):# MPIthis !!!!!!!!!!!!!!!!!!!!
     # put it in a (3,i,j) array.
     #
     cdef cnp.ndarray[dtype=cnp.float64_t,ndim=3] lab = np.vstack((np.cos(arr), np.sin(arr), np.zeros_like(arr))
-                    ).reshape(3, nmax, task_width)
+                    ).reshape(3, nmax, nmax)
     for a in range(3):
         for b in range(3):
             for i in range(nmax):
