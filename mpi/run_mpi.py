@@ -171,7 +171,10 @@ def main(program, nsteps, nmax, temp, pflag):
     right_column_rec = np.empty(nmax, dtype=np.float64)
 
     # Begin doing and timing some MC steps.
-    initial = time.time()  # replace with MPI timing
+    if rank == 0:
+        init_ene = all_energy(lattice, nmax)
+        start = MPI.Wtime()
+
     for it in range(1, nsteps+1):
         if rank % 2 == 0:
             # task_ratio = MC_step(lattice, temp, nmax)
@@ -194,7 +197,6 @@ def main(program, nsteps, nmax, temp, pflag):
                 right_req.Wait()
                 task_ratio = MC_step(
                     task_lattice, temp, nmax, task_grid_width, left_column_rec, right_column_rec)
-
             elif rank == size - 1:
                 left_column_send = task_lattice[:, -1]
                 left_req = COMM.Isend([left_column_send, MPI.DOUBLE], dest=0)
@@ -214,6 +216,7 @@ def main(program, nsteps, nmax, temp, pflag):
                 right_req.Wait()
                 task_ratio = MC_step(
                     task_lattice, temp, nmax, task_grid_width, left_column_rec, right_column_rec)
+
             else:
                 left_column_send = task_lattice[:, -1]
                 left_req = COMM.Isend(
@@ -234,6 +237,7 @@ def main(program, nsteps, nmax, temp, pflag):
                 right_req.Wait()
                 task_ratio = MC_step(
                     task_lattice, temp, nmax, task_grid_width, left_column_rec, right_column_rec)
+
         else:
             if rank != size - 1:
                 left_req = COMM.Irecv(
@@ -255,6 +259,7 @@ def main(program, nsteps, nmax, temp, pflag):
 
                 left_req.Wait()
                 right_req.Wait()
+
             else:
                 left_req = COMM.Irecv(
                     [left_column_rec, MPI.DOUBLE], source=rank-1)
@@ -284,8 +289,13 @@ def main(program, nsteps, nmax, temp, pflag):
             # Make function to get ratio of changed
             ratio[it] = temp_ratio/size
             order[it] = get_order(lattice, nmax)
-
     if rank == 0:
+        end = MPI.Wtime()
+        runtime = end - start
+        final_ene = all_energy(lattice, nmax)
+        print("{}: Size: {:d}, Steps: {:d}, T*: {:5.3f}: Order: {:5.3f}, Time: {:8.6f} s".format(
+            program, nmax, nsteps, temp, order[nsteps-1], runtime))
+        print(f"init_ene = {init_ene}, final = {final_ene}")
         plotdat(lattice, pflag, nmax)
     COMM.Barrier()
 
