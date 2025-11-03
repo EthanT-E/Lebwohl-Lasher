@@ -134,72 +134,42 @@ def savedat(arr, nsteps, Ts, runtime, ratio, energy, order, nmax):
     FileOut.close()
 # =======================================================================
 
+
 def one_energy(arr, ix, iy, nmax):
     """
-    arguments:
+    Arguments:
           arr (float(nmax,nmax)) = array that contains lattice data;
           ix (int) = x lattice coordinate of cell;
           iy (int) = y lattice coordinate of cell;
       nmax (int) = side length of square lattice.
-    description:
-      function that computes the energy of a single cell of the
-      lattice taking into account periodic boundaries.  working with
-      reduced energy (u/epsilon), equivalent to setting epsilon=1 in
+    Description:
+      Function that computes the energy of a single cell of the
+      lattice taking into account periodic boundaries.  Working with
+      reduced energy (U/epsilon), equivalent to setting epsilon=1 in
       equation (1) in the project notes.
-        returns:
+        Returns:
           en (float) = reduced energy of cell.
     """
     en = 0.0
-    ixp = (ix+1) % nmax  # these are the coordinates
+    ixp = (ix+1) % nmax  # These are the coordinates
     ixm = (ix-1) % nmax  # of the neighbours
     iyp = (iy+1) % nmax  # with wraparound
     iym = (iy-1) % nmax
-    neig = np.array([[ixp, ixm, ix, ix], [iy, iy, iyp, iym]])
-    ang = arr[ix, iy] - arr[neig[0], neig[1]]
-# add together the 4 neighbour contributions
+#
+# Add together the 4 neighbour contributions
 # to the energy
 #
-    en = 0.5*(1.0-3.0*np.cos(ang)**2)
-    # en += 0.5*(1.0 - 3.0*np.cos(ang)**2)
+    ang = np.array([arr[ix, iy]-arr[ixp, iy],
+                    arr[ix, iy]-arr[ixm, iy],
+                    arr[ix, iy]-arr[ix, iyp],
+                    arr[ix, iy]-arr[ix, iym]
+                    ])
+    en = 0.5*(1.0 - 3.0*np.cos(ang)**2)
     return en.sum()
-
-# def one_energy(arr, ix, iy, nmax):
-#     """
-#     Arguments:
-#           arr (float(nmax,nmax)) = array that contains lattice data;
-#           ix (int) = x lattice coordinate of cell;
-#           iy (int) = y lattice coordinate of cell;
-#       nmax (int) = side length of square lattice.
-#     Description:
-#       Function that computes the energy of a single cell of the
-#       lattice taking into account periodic boundaries.  Working with
-#       reduced energy (U/epsilon), equivalent to setting epsilon=1 in
-#       equation (1) in the project notes.
-#         Returns:
-#           en (float) = reduced energy of cell.
-#     """
-#     en = 0.0
-#     ixp = (ix+1) % nmax  # These are the coordinates
-#     ixm = (ix-1) % nmax  # of the neighbours
-#     iyp = (iy+1) % nmax  # with wraparound
-#     iym = (iy-1) % nmax
-# #
-# # Add together the 4 neighbour contributions
-# # to the energy
-# #
-#     ang = arr[ix, iy]-arr[ixp, iy]
-#     en += 0.5*(1.0 - 3.0*np.cos(ang)**2)
-#     ang = arr[ix, iy]-arr[ixm, iy]
-#     en += 0.5*(1.0 - 3.0*np.cos(ang)**2)
-#     ang = arr[ix, iy]-arr[ix, iyp]
-#     en += 0.5*(1.0 - 3.0*np.cos(ang)**2)
-#     ang = arr[ix, iy]-arr[ix, iym]
-#     en += 0.5*(1.0 - 3.0*np.cos(ang)**2)
-#     return en
-# # =======================================================================
+# =======================================================================
 
 
-def all_energy(arr, nmax):
+def all_energy(arr):
     """
     Arguments:
           arr (float(nmax,nmax)) = array that contains lattice data;
@@ -210,11 +180,22 @@ def all_energy(arr, nmax):
         Returns:
           enall (float) = reduced energy of lattice.
     """
-    enall = 0.0
-    for i in range(nmax):
-        for j in range(nmax):
-            enall += one_energy(arr, i, j, nmax)
-    return enall
+    left = np.roll(arr, 1, axis=1)
+    left_ang = arr - left
+    above = np.roll(arr, 1, axis=0)
+    above_ang = arr - above
+    right = np.roll(arr, -1, axis=1)
+    right_ang = arr - right
+    bellow = np.roll(arr, -1, axis=0)
+    bellow_ang = arr - bellow
+
+    en = 0.5*(1.0 - 3.0*np.cos(left_ang)**2)
+    en += 0.5*(1.0 - 3.0*np.cos(above_ang)**2)
+    en += 0.5*(1.0 - 3.0*np.cos(bellow_ang)**2)
+    en += 0.5*(1.0 - 3.0*np.cos(right_ang)**2)
+
+    return en.sum()
+
 # =======================================================================
 
 
@@ -320,7 +301,7 @@ def main(program, nsteps, nmax, temp, pflag):
     ratio = np.zeros(nsteps+1, dtype=np.float64)
     order = np.zeros(nsteps+1, dtype=np.float64)
     # Set initial values in arrays
-    energy[0] = all_energy(lattice, nmax)
+    energy[0] = all_energy(lattice)
     ratio[0] = 0.5  # ideal value
     order[0] = get_order(lattice, nmax)
 
@@ -328,7 +309,7 @@ def main(program, nsteps, nmax, temp, pflag):
     initial = time.time()
     for it in range(1, nsteps+1):
         ratio[it] = MC_step(lattice, temp, nmax)
-        energy[it] = all_energy(lattice, nmax)
+        energy[it] = all_energy(lattice)
         order[it] = get_order(lattice, nmax)
     final = time.time()
     runtime = final-initial
