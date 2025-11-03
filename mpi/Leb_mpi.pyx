@@ -47,40 +47,27 @@ cpdef double one_energy_whole_lattice(double[:,:] arr, int ix, int iy,int nmax):
 cpdef double one_energy(double[:,:] arr, int ix, int iy,int nmax,int task_width,double[:] left_col,double[:] right_col):
     cdef:
         double en = 0, ang
-        int ixp = (ix +1)%task_width# might remove the %task_width
-        int ixm = (ix -1)%task_width# might remove the %task_width
+        int ixp = (ix +1)
+        int ixm = (ix -1)
         int iyp = (iy+1)%nmax
         int iym = (iy-1)%nmax
         double cos_ang = 0
-    #printf("ix: %d, iy: %d, iyp: %d arr[iy,ix] %lf\n",ix,iy,iyp,arr[iy,ix])
-    ang = arr[iy,ix] - arr[iyp,ix]
-    #printf("up %lf\n",arr[iyp,ix])
-    cos_ang = cos(ang)
-    en += 0.5*(1-3*(cos_ang**2))
-    ang = arr[iy,ix] - arr[iym,ix]
-    #printf("down %lf\n",arr[iym,ix])
-    cos_ang = cos(ang)
-    en += 0.5*(1-3*(cos_ang**2))
-    if (ix == task_width -1):
-        #printf("right col\n")
-        ang = arr[iy,ix] - right_col[iy]
-     #   printf("right %lf\n",right_col[iy])
-    else:
-        ang = arr[iy,ix] - arr[iy,ixp]
-      #  printf("right %lf\n",arr[iy,ixp])
-    cos_ang = cos(ang)
-    en += 0.5*(1-3*(cos_ang**2))
-    if (ix == 0):
-        # printf("left col\n")
-        ang = arr[iy,ix] - left_col[iy]
-        #printf("left %lf\n",left_col[iy])
-    else:
-        ang = arr[iy,ix] - arr[iy,ixm]
-        #printf("left %lf\n",arr[iy,ixm])
-    cos_ang = cos(ang)
-    en += 0.5*(1-3*(cos_ang**2))
 
-    return en# All working
+    ang = arr[ix, iy]-arr[ix, iyp]
+    en += 0.5*(1.0 - 3.0*np.cos(ang)**2)
+    ang = arr[ix, iy]-arr[ix, iym]
+    en += 0.5*(1.0 - 3.0*np.cos(ang)**2)
+    if ix == task_height-1:
+        ang = arr[ix, iy]-down_col[iy]
+    else:
+        ang = arr[ix, iy]-arr[ixp, iy]
+    en += 0.5*(1.0 - 3.0*np.cos(ang)**2)
+    if ix == 0:
+        ang = arr[ix, iy]-up_col[iy]
+    else:
+        ang = arr[ix, iy]-arr[ixm, iy]
+    en += 0.5*(1.0 - 3.0*np.cos(ang)**2)
+    return en
 
 cpdef double all_energy(double[:,:] arr, int nmax):
     """
@@ -172,22 +159,16 @@ cpdef double MC_step(double[:,:] arr,double Ts,int nmax,int task_width,double[:]
             en0 = one_energy(arr, ix, iy, nmax,task_width,left_col,right_col)
             arr[iy, ix] += ang
             en1 = one_energy(arr, ix, iy, nmax,task_width,left_col,right_col)
-            #printf("en0 = %lf, en1 = %lf\n",en0,en1)
             if en1 <= en0:
                 accept += 1
-             #   printf("Accept lower_energy\n\n")
             else:
-                # Now apply the Monte Carlo test - compare
-                # exp( -(E_new - E_old) / T* ) >= rand(0,1)
                 boltz = exp(-(en1 - en0) / Ts)
 
                 if boltz >= boltzman_arr[i,j]:
                     accept += 1
-              #      printf("accept Boltz\n\n")
                 else:
                     arr[iy, ix] -= ang
-               #     printf("reject Boltz\n\n")
-    return accept/(nmax*task_width)#might be the problem
+    return accept/(nmax*task_width)
 #         
 # # cpdef run(double[:,:] lattice,int nsteps,int nmax,double temp):
 # #     '''

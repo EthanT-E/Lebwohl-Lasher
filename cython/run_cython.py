@@ -28,7 +28,7 @@ import datetime
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
-from Leb_cython import one_energy, all_energy, initdat, get_order, MC_step
+from Leb_cython import initdat, one_energy, all_energy, get_order, MC_step
 
 
 def plotdat(arr, pflag, nmax):
@@ -175,6 +175,5 @@ if __name__ == '__main__':
     else:
         print("Usage: python {} <ITERATIONS> <SIZE> <TEMPERATURE> <PLOTFLAG>".format(
             sys.argv[0]))
-# =======================================================================
 # =======================================================================
 # =======================================================================
