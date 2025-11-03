@@ -350,22 +350,35 @@ def main(program, nsteps, nmax, temp, pflag):
     rank = COMM.Get_rank()
     size = COMM.Get_size()
     # Create and initialise lattice
-
     task_height = nmax//size
+    if rank == 0:
+        print(f"task_height {task_height}")
     task_lattice = np.zeros((task_height, nmax), dtype=np.float64)
     lattice = np.zeros((nmax, nmax))
+    start_ene = 0
+    start_ord = 0
 
     if rank == 0:
         lattice = initdat(nmax)
+        start_ene = all_energy(lattice, nmax)
+        start_ord = get_order(lattice, nmax)
         # Plot initial frame of lattice
         plotdat(lattice, pflag, nmax)
 
-    COMM.Scatter([task_lattice, MPI.DOUBLE], [lattice, MPI.DOUBLE], root=0)
+    COMM.Scatter([lattice, MPI.DOUBLE], [task_lattice, MPI.DOUBLE], root=0)
+    for irank in range(0, size):
+        if irank == rank:
+            print(f"rank {rank}: {task_lattice}")
+        COMM.Barrier()
 
     # Create arrays to store energy, acceptance ratio and order parameter
     energy = np.zeros(nsteps+1, dtype=np.float64)
     ratio = np.zeros(nsteps+1, dtype=np.float64)
     order = np.zeros(nsteps+1, dtype=np.float64)
+
+    final_energy = np.zeros(nsteps+1, dtype=np.float64)
+    final_ratio = np.zeros(nsteps+1, dtype=np.float64)
+    final_order = np.zeros(nsteps+1, dtype=np.float64)
     # Set initial values in arrays
 
     # Begin doing and timing some MC steps.
@@ -376,8 +389,13 @@ def main(program, nsteps, nmax, temp, pflag):
 
     up_rank = (rank - 1) % size
     down_rank = (rank + 1) % size
+    for irank in range(0, size):
+        if rank == irank:
+            print(f"rank {rank}, up {up_rank}, down {down_rank}")
     initial = MPI.Wtime()
     for it in range(1, nsteps+1):
+        # if rank == 0:
+        #    print(f"it: {it} start")
         if rank % 2 == 0:
             up_send = task_lattice[-1, :]
             up_req = COMM.Isend([up_send, MPI.DOUBLE], dest=down_rank)
@@ -386,48 +404,70 @@ def main(program, nsteps, nmax, temp, pflag):
 
             up_req.Wait()
             down_req.Wait()
+         #   if rank == 0:
+         #       print("sent")
 
             up_req = COMM.Irecv([up_rec, MPI.DOUBLE], source=up_rank)
             down_req = COMM.Irecv([down_rec, MPI.DOUBLE], source=down_rank)
             up_req.Wait()
             down_req.Wait()
+         #   if rank == 0:
+         #       print("rec")
             ratio[it] = MC_step(task_lattice, temp, nmax,
                                 task_height, up_rec, down_rec)
-            energy[it] = all_energy(lattice, nmax)
-            order[it] = get_order(lattice, nmax)
+         #   if rank == 0:
+         #       print("MC")
+            energy[it] = all_energy(
+                task_lattice, nmax, task_height, up_rec, down_rec)
+         #   if rank == 0:
+            # print("energy")
+            order[it] = get_order(task_lattice, nmax, task_height)
+         #   if rank == 0:
+            # print("order")
         else:
+            # print(f"rank {rank} pre rec")
             up_req = COMM.Irecv([up_rec, MPI.DOUBLE], source=up_rank)
             down_req = COMM.Irecv([down_rec, MPI.DOUBLE], source=down_rank)
 
             up_req.Wait()
             down_req.Wait()
+            # print(f"rank {rank} MC start")
             ratio[it] = MC_step(task_lattice, temp, nmax,
                                 task_height, up_rec, down_rec)
+            # print(f"rank {rank} MC stop")
 
             up_send = task_lattice[-1, :]
             up_req = COMM.Isend([up_send, MPI.DOUBLE], dest=down_rank)
             down_send = task_lattice[0, :]
             down_req = COMM.Isend([down_send, MPI.DOUBLE], dest=up_rank)
 
-            energy[it] = all_energy(lattice, nmax)
-            order[it] = get_order(lattice, nmax)
+            energy[it] = all_energy(
+                task_lattice, nmax, task_height, up_rec, down_rec)
+            order[it] = get_order(task_lattice, nmax, task_height)
 
             up_req.Wait()
             down_req.Wait()
+        # if rank == 0:
+        #    print(it)
     COMM.Gather(task_lattice, lattice, root=0)
+    COMM.Reduce(energy, final_energy, root=0)
+    COMM.Reduce(ratio, final_ratio, root=0)
+    COMM.Reduce(order, final_order, root=0)
     final = MPI.Wtime()
     runtime = final-initial
 
     if rank == 0:
-        energy[0] = all_energy(lattice, nmax)
-        ratio[0] = 0.5  # ideal value
-        order[0] = get_order(lattice, nmax)
+        final_ratio = final_ratio/size
+        final_order = final_order/size
+        final_energy[0] = start_ene
+        final_ratio[0] = 0.5  # ideal value
+        final_order[0] = start_ord
     # Final outputs
-    print("{}: Size: {:d}, Steps: {:d}, T*: {:5.3f}: Order: {:5.3f}, Time: {:8.6f} s".format(
-        program, nmax, nsteps, temp, order[nsteps-1], runtime))
+        print("{}: Size: {:d}, Steps: {:d}, T*: {:5.3f}: Order: {:5.3f}, Time: {:8.6f} s".format(
+            program, nmax, nsteps, temp, final_order[nsteps-1], runtime))
     # Plot final frame of lattice and generate output file
-    if rank == 0:
-        savedat(lattice, nsteps, temp, runtime, ratio, energy, order, nmax)
+        savedat(lattice, nsteps, temp, runtime, final_ratio,
+                final_energy, final_order, nmax)
         plotdat(lattice, pflag, nmax)
 
 
