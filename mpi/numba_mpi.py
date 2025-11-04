@@ -29,6 +29,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 from mpi4py import MPI
+import numba as nb
 
 # =======================================================================
 
@@ -136,6 +137,7 @@ def savedat(arr, nsteps, Ts, runtime, ratio, energy, order, nmax):
 # =======================================================================
 
 
+@nb.njit
 def one_energy_whole_arr(arr, ix, iy, nmax):
     """
     Arguments:
@@ -171,7 +173,8 @@ def one_energy_whole_arr(arr, ix, iy, nmax):
     return en
 
 
-def one_energy(arr, ix, iy, nmax, task_height, up_col, down_col):
+@nb.njit
+def one_energy(arr: float, ix: int, iy: int, nmax: int, task_height: int, up_col: float, down_col: float) -> float:
     """
     Arguments:
           arr (float(nmax,nmax)) = array that contains lattice data;
@@ -213,7 +216,8 @@ def one_energy(arr, ix, iy, nmax, task_height, up_col, down_col):
 # =======================================================================
 
 
-def all_energy(arr, nmax, task_height=None, up_col=None, down_col=None):
+@nb.njit
+def all_energy(arr: float, nmax: int, task_height=None, up_col=None, down_col=None) -> float:
     """
     Arguments:
           arr (float(nmax,nmax)) = array that contains lattice data;
@@ -240,7 +244,8 @@ def all_energy(arr, nmax, task_height=None, up_col=None, down_col=None):
 # =======================================================================
 
 
-def get_order(arr, nmax, task_height=None):
+@nb.njit
+def get_order(arr: float, nmax: int, task_height=None) -> float:
     """
     Arguments:
           arr (float(nmax,nmax)) = array that contains lattice data;
