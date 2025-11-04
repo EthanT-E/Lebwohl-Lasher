@@ -289,6 +289,9 @@ def get_order(arr: float, nmax: int, task_height=None) -> float:
 # =======================================================================
 
 
+nb.njit
+
+
 def MC_step(arr, Ts, nmax, task_height, up_col, down_col):
     """
     Arguments:
@@ -454,8 +457,8 @@ def main(program, nsteps, nmax, temp, pflag):
     runtime = final-initial
 
     if rank == 0:
-        final_ratio = final_ratio/size
-        final_order = final_order/size
+        final_ratio = final_ratio
+        final_order = final_order
         final_energy[0] = start_ene
         final_ratio[0] = 0.5  # ideal value
         final_order[0] = start_ord

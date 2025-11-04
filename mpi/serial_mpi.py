@@ -442,15 +442,15 @@ def main(program, nsteps, nmax, temp, pflag):
         # if rank == 0:
         #    print(it)
     COMM.Gather(task_lattice, lattice, root=0)
-    COMM.Reduce(energy, final_energy, root=0)
-    COMM.Reduce(ratio, final_ratio, root=0)
-    COMM.Reduce(order, final_order, root=0)
+    COMM.Reduce(energy, final_energy, MPI.SUM, root=0)
+    COMM.Reduce(ratio, final_ratio, MPI.SUM, root=0)
+    COMM.Reduce(order, final_order, MPI.SUM, root=0)
     final = MPI.Wtime()
     runtime = final-initial
 
     if rank == 0:
-        final_ratio = final_ratio/size
-        final_order = final_order/size
+        final_ratio = final_ratio
+        final_order = final_order
         final_energy[0] = start_ene
         final_ratio[0] = 0.5  # ideal value
         final_order[0] = start_ord
