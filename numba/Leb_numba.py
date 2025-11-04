@@ -224,9 +224,9 @@ def get_order(arr: np.ndarray, nmax: int) -> float:
     return eigenvalues.max()
 # =======================================================================
 
-# @nb.njit
 
-
+# @nb.njit(parallel=True)
+@nb.njit()
 def MC_step(arr: np.ndarray, Ts: float, nmax: int) -> float:
     """
     Arguments:
@@ -252,12 +252,13 @@ def MC_step(arr: np.ndarray, Ts: float, nmax: int) -> float:
     accept = 0
     xran = np.random.randint(0, high=nmax, size=(nmax, nmax))
     yran = np.random.randint(0, high=nmax, size=(nmax, nmax))
-    aran = np.random.normal(scale=scale, size=(nmax, nmax))
+    aran = np.empty((nmax, nmax), dtype=np.float64)
+    boltz_arr = np.random.uniform(0.0, 1.0, size=(nmax, nmax))
     for i in range(nmax):
         for j in range(nmax):
             ix = xran[i, j]
             iy = yran[i, j]
-            ang = aran[i, j]
+            ang = np.random.normal()
             en0 = one_energy(arr, ix, iy, nmax)
             arr[ix, iy] += ang
             en1 = one_energy(arr, ix, iy, nmax)
@@ -268,7 +269,7 @@ def MC_step(arr: np.ndarray, Ts: float, nmax: int) -> float:
                 # exp( -(E_new - E_old) / T* ) >= rand(0,1)
                 boltz = np.exp(-(en1 - en0) / Ts)
 
-                if boltz >= np.random.uniform(0.0, 1.0):
+                if boltz >= boltz_arr[i, j]:
                     accept += 1
                 else:
                     arr[ix, iy] -= ang
