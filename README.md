@@ -1,5 +1,10 @@
 # Lebwohl-Lasher crystal model
 Base upon code Provided by Prof Simon Hanna
+# Prerequisites
+- openMPI
+- openMP
+- C compiler
+- pip installed requirements.txt ` pip install -r requirements.txt `
 ## How to use
 For run files and pure python programs 
 
