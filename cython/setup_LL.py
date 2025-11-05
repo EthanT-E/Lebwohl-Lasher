@@ -5,7 +5,7 @@ import numpy
 
 ext_modules = [
     Extension(
-        "Leb_LL",
+        "Leb_cython",
         ["./Leb_cython.pyx"],
         extra_compile_args=['-O3']
     )
