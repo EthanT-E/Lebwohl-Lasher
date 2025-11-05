@@ -1,5 +1,5 @@
 """
-Basic Python Lebwohl-Lasher code.  Based on the paper 
+MPI Numba Lebwohl-Lasher code.  Based on the paper 
 P.A. Lebwohl and G. Lasher, Phys. Rev. A, 6, 426-429 (1972).
 This version in 2D.
 
@@ -18,8 +18,6 @@ The initial configuration is set at random. The boundaries
 are periodic throughout the simulation.  During the
 time-stepping, an array containing two domains is used; these
 domains alternate between old data and new data.
-
-SH 16-Oct-23
 """
 
 import sys
@@ -180,7 +178,11 @@ def one_energy(arr: float, ix: int, iy: int, nmax: int, task_height: int, up_col
           arr (float(nmax,nmax)) = array that contains lattice data;
           ix (int) = x lattice coordinate of cell;
           iy (int) = y lattice coordinate of cell;
-      nmax (int) = side length of square lattice.
+          nmax (int) = side length of square lattice.
+          task_height (int) = height of the slice
+          up_col (float(nmax)) = the row above
+          down_col (float(nmax)) = the row bellow
+
     Description:
       Function that computes the energy of a single cell of the
       lattice taking into account periodic boundaries.  Working with
@@ -249,7 +251,8 @@ def get_order(arr: float, nmax: int, task_height=None) -> float:
     """
     Arguments:
           arr (float(nmax,nmax)) = array that contains lattice data;
-      nmax (int) = side length of square lattice.
+          nmax (int) = side length of square lattice.
+          task_height = height of slice
     Description:
       Function to calculate the order parameter of a lattice
       using the Q tensor approach, as in equation (3) of the
@@ -289,15 +292,16 @@ def get_order(arr: float, nmax: int, task_height=None) -> float:
 # =======================================================================
 
 
-nb.njit
-
-
+@nb.njit
 def MC_step(arr, Ts, nmax, task_height, up_col, down_col):
     """
     Arguments:
           arr (float(nmax,nmax)) = array that contains lattice data;
           Ts (float) = reduced temperature (range 0 to 2);
-      nmax (int) = side length of square lattice.
+          nmax (int) = side length of square lattice.
+          task_height (int) = height of the slice
+          up_col (float(nmax)) = the row above
+          down_col (float(nmax)) = the row bellow
     Description:
       Function to perform one MC step, which consists of an average
       of 1 attempted change per lattice site.  Working with reduced
@@ -317,12 +321,11 @@ def MC_step(arr, Ts, nmax, task_height, up_col, down_col):
     accept = 0
     xran = np.random.randint(0, high=task_height, size=(task_height, nmax))
     yran = np.random.randint(0, high=nmax, size=(task_height, nmax))
-    aran = np.random.normal(scale=scale, size=(task_height, nmax))
     for i in range(task_height):
         for j in range(nmax):
             ix = xran[i, j]
             iy = yran[i, j]
-            ang = aran[i, j]
+            ang = np.random.normal()
             en0 = one_energy(arr, ix, iy, nmax, task_height, up_col, down_col)
             arr[ix, iy] += ang
             en1 = one_energy(arr, ix, iy, nmax, task_height, up_col, down_col)
@@ -382,20 +385,18 @@ def main(program, nsteps, nmax, temp, pflag):
     final_energy = np.zeros(nsteps+1, dtype=np.float64)
     final_ratio = np.zeros(nsteps+1, dtype=np.float64)
     final_order = np.zeros(nsteps+1, dtype=np.float64)
-    # Set initial values in arrays
 
-    # Begin doing and timing some MC steps.
     up_send = np.zeros(nmax, dtype=np.float64)
     down_send = np.zeros(nmax, dtype=np.float64)
     up_rec = np.zeros(nmax, dtype=np.float64)
     down_rec = np.zeros(nmax, dtype=np.float64)
 
+    # get wrap around ranks
     up_rank = (rank - 1) % size
     down_rank = (rank + 1) % size
     initial = MPI.Wtime()
+    # sequence = even send / odd recv -> odd MC -> odd send / even recv -> even MC
     for it in range(1, nsteps+1):
-        # if rank == 0:
-        #    print(f"it: {it} start")
         if rank % 2 == 0:
             up_send = task_lattice[-1, :]
             up_req = COMM.Isend([up_send, MPI.DOUBLE], dest=down_rank)
@@ -404,37 +405,24 @@ def main(program, nsteps, nmax, temp, pflag):
 
             up_req.Wait()
             down_req.Wait()
-         #   if rank == 0:
-         #       print("sent")
 
             up_req = COMM.Irecv([up_rec, MPI.DOUBLE], source=up_rank)
             down_req = COMM.Irecv([down_rec, MPI.DOUBLE], source=down_rank)
             up_req.Wait()
             down_req.Wait()
-         #   if rank == 0:
-         #       print("rec")
             ratio[it] = MC_step(task_lattice, temp, nmax,
                                 task_height, up_rec, down_rec)
-         #   if rank == 0:
-         #       print("MC")
             energy[it] = all_energy(
                 task_lattice, nmax, task_height, up_rec, down_rec)
-         #   if rank == 0:
-            # print("energy")
             order[it] = get_order(task_lattice, nmax, task_height)
-         #   if rank == 0:
-            # print("order")
         else:
-            # print(f"rank {rank} pre rec")
             up_req = COMM.Irecv([up_rec, MPI.DOUBLE], source=up_rank)
             down_req = COMM.Irecv([down_rec, MPI.DOUBLE], source=down_rank)
 
             up_req.Wait()
             down_req.Wait()
-            # print(f"rank {rank} MC start")
             ratio[it] = MC_step(task_lattice, temp, nmax,
                                 task_height, up_rec, down_rec)
-            # print(f"rank {rank} MC stop")
 
             up_send = task_lattice[-1, :]
             up_req = COMM.Isend([up_send, MPI.DOUBLE], dest=down_rank)
@@ -447,8 +435,6 @@ def main(program, nsteps, nmax, temp, pflag):
 
             up_req.Wait()
             down_req.Wait()
-        # if rank == 0:
-        #    print(it)
     COMM.Gather(task_lattice, lattice, root=0)
     COMM.Reduce(energy, final_energy, root=0)
     COMM.Reduce(ratio, final_ratio, root=0)

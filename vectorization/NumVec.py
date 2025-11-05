@@ -173,10 +173,11 @@ def all_energy(arr):
     """
     Arguments:
           arr (float(nmax,nmax)) = array that contains lattice data;
-      nmax (int) = side length of square lattice.
     Description:
       Function to compute the energy of the entire lattice. Output
-      is in reduced units (U/epsilon).
+      is in reduced units (U/epsilon). Does this via making grids of 
+      each the neighbours in the original crystals index then calculates
+      via numpy vectorization
         Returns:
           enall (float) = reduced energy of lattice.
     """
@@ -257,7 +258,7 @@ def MC_step(arr, Ts, nmax):
     yran = np.random.randint(0, high=nmax, size=(nmax, nmax))
     aran = np.random.normal(scale=scale, size=(nmax, nmax))
     boltz_arr = np.random.uniform(0.0, 1.0, size=(nmax, nmax))
-    # pre calc en0
+    # pre calc en0 basicly all_energy but returns array
     left = np.roll(arr, 1, axis=1)
     left_ang = arr - left
     above = np.roll(arr, 1, axis=0)
@@ -276,7 +277,6 @@ def MC_step(arr, Ts, nmax):
             ix = xran[i, j]
             iy = yran[i, j]
             ang = aran[i, j]
-            # en0 = one_energy(arr, ix, iy, nmax)
             arr[ix, iy] += ang
             en1 = one_energy(arr, ix, iy, nmax)
             if en1 <= en0[ix, iy]:

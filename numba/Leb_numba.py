@@ -225,7 +225,7 @@ def get_order(arr: np.ndarray, nmax: int) -> float:
 # =======================================================================
 
 
-# @nb.njit(parallel=True)
+# @nb.njit(parallel=True)# makes little difference
 @nb.njit()
 def MC_step(arr: np.ndarray, Ts: float, nmax: int) -> float:
     """
@@ -252,7 +252,6 @@ def MC_step(arr: np.ndarray, Ts: float, nmax: int) -> float:
     accept = 0
     xran = np.random.randint(0, high=nmax, size=(nmax, nmax))
     yran = np.random.randint(0, high=nmax, size=(nmax, nmax))
-    aran = np.empty((nmax, nmax), dtype=np.float64)
     boltz_arr = np.random.uniform(0.0, 1.0, size=(nmax, nmax))
     for i in range(nmax):
         for j in range(nmax):
