@@ -10,7 +10,7 @@ ext_modules = [
         extra_compile_args=['-O3']
     )
 ]
-setup(name="cython_LL",
+setup(name="Leb_cython",
       ext_modules=cythonize(ext_modules),
       include_dirs=[numpy.get_include()],
       )
